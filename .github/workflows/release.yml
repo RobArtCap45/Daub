@@ -75,7 +75,7 @@ jobs:
 
       - name: Keep the installers (manual runs)
         if: env.PUBLISH == 'never'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: daub-${{ matrix.target }}
           path: |
