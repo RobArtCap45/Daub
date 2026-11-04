@@ -68,3 +68,11 @@ button.wide{width:100%;margin-top:8px}
 /* the Examples menu has many entries now: scroll it */
 #exList{max-height:calc(100vh - 70px);overflow-y:auto;min-width:230px}
 #cv:focus{outline:none}
+
+/* small question box (replaces window.prompt, which the desktop app does not have) */
+#ask{position:fixed;inset:0;z-index:80;background:#1d1d1b66;display:flex;align-items:center;justify-content:center}
+#ask[hidden]{display:none}
+.askbox{background:#fff;border-radius:12px;box-shadow:0 12px 40px #0004;padding:20px 22px;width:340px;max-width:90%}
+.askbox h3{margin:0 0 6px;font-size:16px}.askbox p{margin:0 0 12px;color:var(--dim)}
+.askbox input{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font:400 14px var(--sans);margin-bottom:14px}
+.askbtns{display:flex;justify-content:flex-end;gap:8px}

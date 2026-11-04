@@ -63,7 +63,18 @@
       this.onNav && this.onNav(this.stack);
     }
     applyPan() { this.world.style.transform = `translate(${this.pan.x}px,${this.pan.y}px) scale(${this.scale})`; }
+    // The editor cannot measure itself while its tab is hidden. Remember that, and finish when it is shown again.
+    refresh() {
+      if (!this.stale || !this.el.clientWidth) return;
+      this.stale = false;
+      if (this.needsFit) { this.needsFit = false; this.fit(); return; }
+      this.applyPan(); this.drawWires();
+      const view = this.el.getBoundingClientRect(); // the graph changed behind our back: if most of it is off-screen, bring it back
+      const seen = [...this.world.querySelectorAll('.node')].filter((b) => { const q = b.getBoundingClientRect(); return q.right > view.left && q.left < view.right && q.bottom > view.top && q.top < view.bottom; }).length;
+      if (seen < this.graph.nodes.length / 2) this.fit();
+    }
     fit() {
+      if (!this.el.clientWidth) { this.needsFit = true; this.stale = true; return; }
       const ns = this.graph.nodes; if (!ns.length) { this.pan = { x: 20, y: 20 }; this.scale = 1; this.applyPan(); return; }
       const els = [...this.world.querySelectorAll('.node')];
       const dim = (id, p, d) => { const b = els.find((x) => x.dataset.id === id); return b ? b[p] : d; };
@@ -201,7 +212,8 @@
       [...this.world.querySelectorAll('.node')].forEach((n) => n.remove());
       const connected = new Set(this.graph.edges.map((e) => e.to + ':' + e.input));
       for (const n of this.graph.nodes) this.world.appendChild(this.buildNode(n, connected));
-      this.drawWires(); this.onSelect && this.onSelect();
+      if (this.el.clientWidth) this.drawWires(); else this.stale = true; // wires need real measurements; redraw when shown
+      this.onSelect && this.onSelect();
     }
 
     buildNode(n, connected) {

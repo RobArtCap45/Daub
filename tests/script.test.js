@@ -1,8 +1,8 @@
 // Loom script tests. Run with:  node tests/script.test.js
 global.window = global;
-require('../src/engine.js');
-require('../src/script.js');
-require('../src/examples.js');
+require('../app/src/engine.js');
+require('../app/src/script.js');
+require('../app/src/examples.js');
 const L = window.Loom, S = L.script;
 let failed = 0;
 const check = (name, ok, detail = '') => { console.log((ok ? 'PASS ' : 'FAIL ') + name + (detail ? '  ' + detail : '')); if (!ok) failed++; };

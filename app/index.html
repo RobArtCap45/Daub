@@ -3,7 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Loom – generative art sketchbook</title>
+<title>Loom – design and generative art studio</title>
+<meta name="description" content="Loom is an open-source studio for designers and creative coders: vector design, node-based generative art, a text language, and Processing-style code.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -92,6 +95,14 @@
 </div>
 <div id="add" hidden><input id="addq" placeholder="Search nodes…" autocomplete="off"><div id="addlist"></div></div>
 <div id="toast" hidden></div>
+<div id="ask" hidden>
+  <div class="askbox">
+    <h3 id="askTitle"></h3>
+    <p id="askHint"></p>
+    <input id="askInput" type="number" min="1" max="120" step="1">
+    <div class="askbtns"><button id="askCancel">Cancel</button><button id="askOk" class="primary">OK</button></div>
+  </div>
+</div>
 <script src="src/engine.js"></script>
 <script src="src/sketch.js"></script>
 <script src="src/editor.js"></script>

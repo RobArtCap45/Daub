@@ -176,6 +176,7 @@
     $('#nodesView').hidden = m !== 'nodes'; $('#codeView').hidden = m !== 'code'; $('#designView').hidden = m !== 'design'; $('#scriptView').hidden = m !== 'script';
     if (m === 'script') enterScript();
     document.querySelector('main').classList.toggle('wide', m === 'design');
+    if (m === 'nodes') editor.refresh(); // the graph may have changed while this tab was hidden (measure after the layout settles)
     if (m === 'design') playing = false; // opens paused so editing is steady; the ▶ button plays
     if (m === 'code') runSketch(); else if (m === 'design') { window.Loom.design.show(); window.Loom.design.syncPlay(); } else renderNodes();
   }
@@ -309,11 +310,23 @@
     e.target.value = '';
   };
 
+  // ---- a small in-page question box (window.prompt does not exist in the desktop app)
+  function askNumber(title, hint, initial) {
+    return new Promise((resolve) => {
+      const box = $('#ask'), input = $('#askInput'), ok = $('#askOk'), cancel = $('#askCancel');
+      $('#askTitle').textContent = title; $('#askHint').textContent = hint; input.value = initial; box.hidden = false; input.focus(); input.select();
+      const done = (v) => { box.hidden = true; ok.onclick = cancel.onclick = input.onkeydown = null; resolve(v); };
+      ok.onclick = () => done(parseFloat(input.value));
+      cancel.onclick = () => done(NaN);
+      input.onkeydown = (e) => { e.stopPropagation(); if (e.key === 'Enter') done(parseFloat(input.value)); else if (e.key === 'Escape') done(NaN); };
+    });
+  }
+
   // ---- video export: records the preview canvas for N seconds
-  $('#video').onclick = () => {
+  $('#video').onclick = async () => {
     if (!window.MediaRecorder || !cv.captureStream) return toast('Video export is not supported in this browser.');
     const d = editor.project.design, def = mode === 'design' ? Math.max(0.5, (d && d.duration) || 4) : 5;
-    const secs = parseFloat(window.prompt('How many seconds should the video be?', String(def)));
+    const secs = await askNumber('Export video', 'How many seconds should the video be? (1–120)', def);
     if (!(secs > 0) || secs > 120) return;
     playing = true; time = 0;
     if (mode === 'design') window.Loom.design.setTime(0); else if (mode === 'code') runSketch();
@@ -323,6 +336,21 @@
     rec.onstop = () => { download('loom.webm', new Blob(chunks, { type: 'video/webm' })); toast('Saved loom.webm'); };
     rec.start(); toast(`Recording ${secs}s…`, 0); setTimeout(() => rec.stop(), secs * 1000);
   };
+
+  // ---- desktop app (Electron): native menu commands arrive here and press the matching button
+  if (window.loomDesktop) {
+    document.body.classList.add('desktop', window.loomDesktop.platform);
+    window.loomDesktop.onMenu((action) => {
+      const typing = document.activeElement && document.activeElement.matches('textarea,input:not([type=color]):not([type=checkbox])');
+      if (action === 'undo' || action === 'redo') {
+        if (typing) document.execCommand(action); // inside a text box, undo the typing
+        else if (mode === 'nodes' || mode === 'design') $('#' + action).click(); // otherwise undo the sketch
+        return;
+      }
+      const buttons = { open: '#open', save: '#save', importSvg: '#importSvg', png: '#png', svg: '#svg', video: '#video' };
+      if (buttons[action]) $(buttons[action]).click();
+    });
+  }
 
   window.Loom.app = { editor, runSketch, renderNodes, setMode, toast };
   renderNodes();

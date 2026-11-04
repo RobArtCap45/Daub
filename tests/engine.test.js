@@ -1,6 +1,6 @@
 // Engine tests. Run with:  node tests/engine.test.js
 global.window = global;
-require('../src/engine.js');
+require('../app/src/engine.js');
 const L = window.Loom;
 let failed = 0;
 const near = (a, b, tol) => Math.abs(a - b) <= tol;
