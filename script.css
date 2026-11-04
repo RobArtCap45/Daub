@@ -1,0 +1,18 @@
+/* Script tab: the text language */
+#scriptView{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column}
+#scriptView[hidden]{display:none}
+#script,#code{font-variant-ligatures:none}
+#script{flex:1;min-height:120px;resize:none;background:#fff;color:var(--text);border:0;border-right:1px solid var(--line);padding:16px 18px;font:400 13px/1.65 var(--mono);tab-size:2;outline:0}
+.sbar{display:flex;align-items:center;gap:10px;padding:6px 12px;border-top:1px solid var(--line);border-right:1px solid var(--line);background:var(--panel);min-height:38px}
+#sMsg{font-size:12.5px;white-space:pre-wrap}
+#sMsg.ok{color:#2c8a4f}
+#sMsg.err{color:var(--accent);cursor:pointer;background:var(--accent-soft);padding:3px 8px;border-radius:5px}
+#sRef{background:var(--panel);border-top:1px solid var(--line);border-right:1px solid var(--line);max-height:42%;overflow:auto}
+#sRef summary{cursor:pointer;padding:8px 12px;font-weight:500;font-size:12.5px;position:sticky;top:0;background:var(--panel);z-index:1}
+.cheat{padding:2px 14px 6px;color:#555;font-size:12.5px}.cheat p{margin:5px 0}
+.cheat code,.rrow code{font:12px var(--mono);background:#efefec;border-radius:4px;padding:1px 5px}
+#sRefQ{width:100%;margin-top:6px;padding:5px 9px;border:1px solid var(--line);border-radius:6px;font:400 12.5px var(--sans)}
+#sRefList{padding:0 8px 10px}
+.rrow{display:flex;flex-direction:column;gap:1px;padding:5px 8px;border-radius:5px;cursor:pointer}
+.rrow:hover{background:#efefec}.rrow code{background:none;padding:0;color:#1d1d1b;white-space:normal}.rrow small{color:var(--dim);font-size:12px}
+body[data-mode=script] #fit,body[data-mode=script] #undo,body[data-mode=script] #redo{display:none}

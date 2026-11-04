@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Loom – generative art sketchbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="design.css">
+<link rel="stylesheet" href="script.css">
+</head>
+<body>
+<header>
+  <span class="brand">Loom</span>
+  <div class="group">
+    <button id="run" title="Run (Space)">▶</button>
+    <button id="stop" title="Stop (Space)">■</button>
+  </div>
+  <nav class="tabs"><button data-tab="design">Design</button><button data-tab="nodes" class="on">Nodes</button><button data-tab="script">Script</button><button data-tab="code">Code</button></nav>
+  <span class="spacer"></span>
+  <div class="group">
+    <button id="fit" title="Fit to view (F)">⤢</button>
+    <button id="undo" title="Undo (Ctrl+Z)">↶</button>
+    <button id="redo" title="Redo (Ctrl+Shift+Z)">↷</button>
+  </div>
+  <details class="menu" id="exMenu"><summary>Examples</summary><div class="pop" id="exList"></div></details>
+  <details class="menu"><summary>File</summary>
+    <div class="pop">
+      <button id="save">Save sketch…</button><button id="open">Open sketch…</button><hr>
+      <button id="importSvg">Import SVG…</button><hr>
+      <button id="png">Export PNG</button><button id="svg">Export SVG</button><button id="video">Export video (WebM)…</button>
+    </div>
+  </details>
+  <button id="help" title="How it works">?</button>
+  <input type="file" id="file" accept=".json" hidden>
+  <input type="file" id="svgFile" accept=".svg,image/svg+xml" hidden>
+</header>
+<main>
+  <section id="nodesView">
+    <div id="graph"></div>
+    <div id="crumbs" hidden></div>
+    <div id="bar" hidden></div>
+    <div id="hint">Double-click to add a node · Shift+drag to select several · scroll to zoom · F to fit</div>
+    <div id="welcome" hidden>
+      <h2>Welcome to Loom</h2>
+      <ol>
+        <li><b>Design.</b> Draw shapes with the pen and animate them on a timeline in the <b>Design</b> tab.</li>
+        <li><b>Make it generative.</b> In <b>Nodes</b>, connect shapes and numbers with wires. Double-click to add a node.</li>
+        <li><b>Tweak.</b> Drag a number’s label left or right to change it.</li>
+      </ol>
+      <p>Not sure where to start? Open <b>Examples</b> in the top bar.</p>
+      <button id="welcomeOk" class="primary">Got it</button>
+    </div>
+  </section>
+  <section id="designView" hidden>
+    <div id="tools"></div>
+    <div id="dstage">
+      <canvas id="dcv"></canvas>
+      <div id="penhint" hidden>Pen: click to add points · drag to curve · click the first point to close · Enter to finish · Esc to cancel</div>
+      <div id="zoombar"><button id="zOut" title="Zoom out">−</button><span id="zVal">100%</span><button id="zIn" title="Zoom in">+</button><button id="zFit">Fit</button></div>
+    </div>
+    <aside id="dside"><div id="props"></div><div id="layers"></div></aside>
+    <div id="timeline"></div>
+  </section>
+  <section id="scriptView" hidden>
+    <textarea id="script" spellcheck="false" placeholder="Type a script, or open Examples → Script sketches"></textarea>
+    <div class="sbar"><span id="sMsg" class="ok"></span><span class="spacer"></span><button id="sTidy" title="Rewrite the script in its tidy canonical form">Tidy</button></div>
+    <details id="sRef"><summary>Language &amp; node reference</summary>
+      <div class="cheat">
+        <p><code>grid(14, 14)</code> calls a node like a function. Set inputs by position, or by name: <code>grid(cols: 14)</code>.</p>
+        <p><code>a |&gt; b()</code> sends the value on the left into the next node. <code>let size = 40</code> gives a value a name you can reuse.</p>
+        <p>Math is plain: <code>n * 360 + 20</code> (use <code>+ - * / % ^</code>). Comments start with <code>//</code>. End your chain with <code>|&gt; output()</code>.</p>
+        <p><code>def mine(size = 10) { … }</code> makes your own node. Its parameters become its controls.</p>
+        <input id="sRefQ" placeholder="Filter nodes… (click one to insert it)" autocomplete="off">
+      </div>
+      <div id="sRefList"></div>
+    </details>
+  </section>
+  <section id="codeView" hidden><textarea id="code" spellcheck="false"></textarea></section>
+  <section id="preview"><canvas id="cv"></canvas><div id="status"></div></section>
+</main>
+<div id="pen" hidden>
+  <div class="penbar">
+    <b>Draw a shape</b><span class="penhint">Click to add points · drag to curve · click the first point to close · Delete removes a point · Shift snaps</span>
+    <span class="spacer"></span><span id="penCount"></span>
+    <label><input type="checkbox" id="penClosed"> Closed</label>
+    <button id="penSmooth">Smooth</button><button id="penClear">Clear</button><button id="penCancel">Cancel</button><button id="penDone" class="primary">Done</button>
+  </div>
+  <div class="penstage"><canvas id="pencv"></canvas></div>
+</div>
+<div id="add" hidden><input id="addq" placeholder="Search nodes…" autocomplete="off"><div id="addlist"></div></div>
+<div id="toast" hidden></div>
+<script src="src/engine.js"></script>
+<script src="src/sketch.js"></script>
+<script src="src/editor.js"></script>
+<script src="src/draw.js"></script>
+<script src="src/design.js"></script>
+<script src="src/script.js"></script>
+<script src="src/examples.js"></script>
+<script src="src/examples-code.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>

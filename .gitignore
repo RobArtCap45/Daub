@@ -1,0 +1,12 @@
+# dependencies and build output (for the desktop app)
+node_modules/
+dist/
+out/
+build/
+*.log
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
