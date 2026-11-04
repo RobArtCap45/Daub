@@ -18,7 +18,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - { os: macos-latest, target: mac }
+          - { os: windows-latest, target: win }
+          - { os: ubuntu-latest, target: linux }
     env:
       PUBLISH: ${{ startsWith(github.ref, 'refs/tags/v') && 'always' || 'never' }}
     steps:
@@ -30,30 +33,43 @@ jobs:
       - run: npm ci
       - run: npm test
 
-      # Code signing is optional. Without the secrets below the installers are built unsigned
-      # (see docs/desktop.md for how to add them). macOS notarization needs the APPLE_* secrets too.
-      - name: Build (macOS)
-        if: runner.os == 'macOS'
-        run: npx electron-builder --mac --publish ${{ env.PUBLISH }}
+      # Code signing is optional (see docs/desktop.md). Certificates are only handed to electron-builder when the
+      # secrets exist: an empty CSC_LINK counts as "a certificate file at this path" and fails the build.
+      - name: Use signing certificates if provided
+        shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-
-      - name: Build (Windows)
-        if: runner.os == 'Windows'
-        run: npx electron-builder --win --publish ${{ env.PUBLISH }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            if [ -n "$MAC_CSC_LINK" ]; then
+              echo "CSC_LINK=$MAC_CSC_LINK" >> "$GITHUB_ENV"
+              echo "CSC_KEY_PASSWORD=$MAC_CSC_KEY_PASSWORD" >> "$GITHUB_ENV"
+              if [ -n "$APPLE_ID" ]; then
+                echo "APPLE_ID=$APPLE_ID" >> "$GITHUB_ENV"
+                echo "APPLE_APP_SPECIFIC_PASSWORD=$APPLE_APP_SPECIFIC_PASSWORD" >> "$GITHUB_ENV"
+                echo "APPLE_TEAM_ID=$APPLE_TEAM_ID" >> "$GITHUB_ENV"
+              fi
+            else
+              echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "$GITHUB_ENV"
+              echo "No macOS certificate provided: building unsigned."
+            fi
+          elif [ "$RUNNER_OS" = "Windows" ]; then
+            if [ -n "$WIN_CSC_LINK" ]; then
+              echo "WIN_CSC_LINK=$WIN_CSC_LINK" >> "$GITHUB_ENV"
+              echo "WIN_CSC_KEY_PASSWORD=$WIN_CSC_KEY_PASSWORD" >> "$GITHUB_ENV"
+            else
+              echo "No Windows certificate provided: building unsigned."
+            fi
+          fi
 
-      - name: Build (Linux)
-        if: runner.os == 'Linux'
-        run: npx electron-builder --linux --publish ${{ env.PUBLISH }}
+      - name: Build installers
+        run: npx electron-builder --${{ matrix.target }} --publish ${{ env.PUBLISH }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -61,7 +77,7 @@ jobs:
         if: env.PUBLISH == 'never'
         uses: actions/upload-artifact@v4
         with:
-          name: loom-${{ runner.os }}
+          name: loom-${{ matrix.target }}
           path: |
             dist/*.dmg
             dist/*.zip
