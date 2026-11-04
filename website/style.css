@@ -1,0 +1,58 @@
+:root{--bg:#fbfbfa;--panel:#f3f3f1;--line:#dcdcd8;--text:#1d1d1b;--dim:#6b6b65;--accent:#e8483a;--accent-soft:#fdecea;--sans:"Inter",-apple-system,"Helvetica Neue",Arial,sans-serif;--mono:"JetBrains Mono",Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:400 17px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+img{max-width:100%;height:auto;display:block}
+code{font:500 .9em var(--mono);background:var(--panel);padding:.1em .4em;border-radius:5px}
+pre{background:#1d1d1b;color:#f3f3f1;border-radius:10px;padding:16px 18px;overflow:auto;font:400 14px/1.6 var(--mono)}
+pre code{background:none;padding:0;font-weight:400}
+
+.nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:28px;padding:12px max(24px,calc((100vw - 1120px)/2));background:#fbfbfae6;backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px;text-decoration:none;letter-spacing:-.01em}
+.nav nav{display:flex;gap:22px;margin-left:auto;font-size:15px}
+.nav nav a{text-decoration:none;color:var(--dim)}.nav nav a:hover{color:var(--text)}
+
+.btn{display:inline-block;padding:11px 20px;border:1px solid var(--line);border-radius:9px;background:#fff;text-decoration:none;font-weight:500;font-size:16px;transition:border-color .15s,transform .15s}
+.btn:hover{border-color:#a8a8a2;transform:translateY(-1px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn.primary:hover{background:#d63d30;border-color:#d63d30}
+.btn.small{padding:7px 14px;font-size:14px}
+
+main{max-width:1120px;margin:0 auto;padding:0 24px}
+.hero{text-align:center;padding:84px 0 40px}
+.eyebrow{display:inline-block;margin:0 0 18px;padding:5px 12px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:14px}
+h1{margin:0 0 20px;font-size:clamp(40px,7vw,72px);line-height:1.04;letter-spacing:-.035em;font-weight:700}
+h1 span{color:var(--accent)}
+.lead{max-width:640px;margin:0 auto 30px;font-size:20px;color:var(--dim)}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.note{color:var(--dim)}.small{font-size:14px}
+.hero .note{margin:14px 0 48px}
+.shot img{border:1px solid var(--line);border-radius:12px;box-shadow:0 24px 60px -20px #0003}
+
+.block{padding:84px 0 20px}
+h2{margin:0 0 10px;font-size:clamp(28px,4vw,42px);letter-spacing:-.025em;line-height:1.15}
+.sub{max-width:640px;margin:0 0 44px;color:var(--dim);font-size:19px}
+.feature{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:44px;align-items:center;margin:0 0 76px}
+.feature.flip{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}.feature.flip .text{order:2}
+.tag{margin:0 0 6px;color:var(--accent);font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.08em}
+h3{margin:0 0 12px;font-size:28px;letter-spacing:-.02em;line-height:1.2}
+.feature p{margin:0 0 14px;color:var(--dim)}
+.feature ul{margin:0;padding-left:20px;color:var(--dim)}.feature li{margin:5px 0}
+
+.download{text-align:center;padding-bottom:40px}.download .sub{margin-left:auto;margin-right:auto}
+.dl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.dl{display:flex;flex-direction:column;gap:2px;padding:22px 16px;border:1px solid var(--line);border-radius:14px;background:#fff;text-decoration:none;transition:border-color .15s,transform .15s}
+.dl:hover{border-color:#a8a8a2;transform:translateY(-2px)}.dl strong{font-size:19px}.dl span{color:var(--dim);font-size:14px}
+.dl.yours{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.dl.web{background:var(--panel)}
+.open{text-align:center;padding-bottom:90px}.open .sub{margin-left:auto;margin-right:auto}
+
+footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:26px max(24px,calc((100vw - 1120px)/2));border-top:1px solid var(--line);color:var(--dim);font-size:14px}
+footer a{text-decoration:none}footer a:hover{color:var(--text)}
+
+@media(max-width:860px){
+  .feature,.feature.flip{grid-template-columns:minmax(0,1fr);gap:22px}.feature.flip .text{order:0}
+  .dl-grid{grid-template-columns:1fr 1fr}
+  .nav nav{display:none}.nav .btn{margin-left:auto}
+}
+@media(max-width:480px){.dl-grid{grid-template-columns:1fr}.hero{padding-top:56px}}

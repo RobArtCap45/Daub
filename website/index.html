@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Loom – design and generative art studio</title>
+<meta name="description" content="Loom is a free, open-source studio for designers and creative coders. Draw vectors, animate on a timeline, build generative art with nodes, or write it as code. Mac, Windows, Linux and in your browser.">
+<meta property="og:title" content="Loom – design and generative art studio">
+<meta property="og:description" content="Draw it, animate it, generate it. Free and open source.">
+<meta property="og:image" content="assets/nodes.png">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="nav">
+  <a class="brand" href="#top"><img src="icon.svg" alt="" width="28" height="28"> Loom</a>
+  <nav>
+    <a href="#workspaces">What it does</a>
+    <a href="#download">Download</a>
+    <a href="https://github.com/RobArtCap45/Loom/tree/main/docs">Docs</a>
+    <a href="https://github.com/RobArtCap45/Loom">GitHub</a>
+  </nav>
+  <a class="btn small primary" href="app/">Open in browser</a>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <p class="eyebrow">Free and open source</p>
+    <h1>Draw it. Animate it.<br><span>Generate it.</span></h1>
+    <p class="lead">Loom is a studio where vector design, node-based generative art and code live side by side. Start with a pen and a timeline, grow it into a system of nodes, and write it down as text whenever you like.</p>
+    <div class="cta">
+      <a class="btn primary" href="app/">Try it in your browser</a>
+      <a class="btn" href="#download">Download for desktop</a>
+    </div>
+    <p class="small note">No account. No upload. Your sketches are files on your computer.</p>
+    <div class="shot hero-shot"><img src="assets/nodes.png" alt="The Loom node editor with a graph on the left and the generated artwork on the right" width="1440" height="880"></div>
+  </section>
+
+  <section id="workspaces" class="block">
+    <h2>Four ways to make the same thing</h2>
+    <p class="sub">Every workspace edits the same sketch, so you can move between them without exporting anything.</p>
+
+    <article class="feature">
+      <div class="text">
+        <p class="tag">Design</p>
+        <h3>A vector editor with a timeline</h3>
+        <p>Draw with shapes and a bezier pen, arrange layers, then animate any value with keyframes and easing (smooth, overshoot, bounce, hold). Export PNG, SVG or a WebM video.</p>
+        <ul><li>Pen, shapes, layers, alignment and snapping</li><li>Keyframes on position, size, rotation, opacity, radius</li><li>Your drawings can be dropped straight into the node graph</li></ul>
+      </div>
+      <div class="shot"><img src="assets/design.png" alt="The Design workspace showing a bouncing ball squashed at the moment of impact, with its keyframes on the timeline" loading="lazy" width="1440" height="880"></div>
+    </article>
+
+    <article class="feature flip">
+      <div class="text">
+        <p class="tag">Nodes</p>
+        <h3>Generative art you can see how it works</h3>
+        <p>Wire nodes together: grids, noise, waves, copies, bezier paths, union and subtract. Every node is a short, readable step. Package a few into your own custom node and reuse it.</p>
+        <ul><li>Lists flow through nodes, so one connection can drive hundreds of shapes</li><li>Align, distribute, compound shapes, import SVG</li><li>Drag a number's label to change it and watch it update</li></ul>
+      </div>
+      <div class="shot"><img src="assets/nodes.png" alt="A node graph that places stars on a grid, sized and colored by noise" loading="lazy" width="1440" height="880"></div>
+    </article>
+
+    <article class="feature">
+      <div class="text">
+        <p class="tag">Script</p>
+        <h3>The same graph, as text</h3>
+        <p>A small language that reads like a recipe. Edit the text and the graph changes; edit the graph and the text follows. Define your own nodes with <code>def</code>. Mistakes get a plain-language message and a suggestion.</p>
+<pre><code>ellipse(70, 22)
+  |&gt; copy(spots, rotate: attribute(spots, degrees))
+  |&gt; style(hue: hue, sat: 55, alpha: 0.3)</code></pre>
+      </div>
+      <div class="shot"><img src="assets/script.png" alt="The Script workspace with a custom petal node defined in text next to its artwork" loading="lazy" width="1440" height="880"></div>
+    </article>
+
+    <article class="feature flip">
+      <div class="text">
+        <p class="tag">Code</p>
+        <h3>Processing-style code, with over 60 examples</h3>
+        <p>If you know <code>setup()</code> and <code>draw()</code>, you already know it. Mouse and keyboard events, vectors, noise, and examples from color and forms to flocking and fractals.</p>
+        <ul><li>Plain JavaScript, no install</li><li>Everything runs on the same canvas as your designs</li></ul>
+      </div>
+      <div class="shot"><img src="assets/code.png" alt="A flocking simulation running in the Code workspace" loading="lazy" width="1440" height="880"></div>
+    </article>
+  </section>
+
+  <section id="download" class="block download">
+    <h2>Download Loom</h2>
+    <p class="sub" id="dl-sub">Desktop apps for macOS, Windows and Linux. Or just open it in your browser, nothing to install.</p>
+    <div class="dl-grid">
+      <a class="dl" id="dl-mac" href="https://github.com/RobArtCap45/Loom/releases/latest"><strong>macOS</strong><span>Apple Silicon and Intel</span></a>
+      <a class="dl" id="dl-win" href="https://github.com/RobArtCap45/Loom/releases/latest"><strong>Windows</strong><span>Installer or portable</span></a>
+      <a class="dl" id="dl-linux" href="https://github.com/RobArtCap45/Loom/releases/latest"><strong>Linux</strong><span>AppImage or .deb</span></a>
+      <a class="dl web" href="app/"><strong>In your browser</strong><span>Works right now</span></a>
+    </div>
+    <p class="small note" id="dl-note">The apps are not signed with an Apple or Microsoft certificate yet, so your system may ask you to confirm the first time you open one. <a href="https://github.com/RobArtCap45/Loom/blob/main/docs/desktop.md#code-signing-optional-but-recommended-before-sharing-widely">How to open it</a>.</p>
+  </section>
+
+  <section class="block open">
+    <h2>Open source, public domain</h2>
+    <p class="sub">Loom is released under CC0: use it, change it, ship it, no strings. Read the code, report a bug, add a node, write an example.</p>
+    <div class="cta"><a class="btn primary" href="https://github.com/RobArtCap45/Loom">View on GitHub</a><a class="btn" href="https://github.com/RobArtCap45/Loom/blob/main/CONTRIBUTING.md">Contribute</a></div>
+  </section>
+</main>
+
+<footer>
+  <span>Loom · CC0 public domain</span>
+  <span><a href="https://github.com/RobArtCap45/Loom">GitHub</a> · <a href="https://github.com/RobArtCap45/Loom/issues">Issues</a> · <a href="https://github.com/RobArtCap45/Loom/tree/main/docs">Docs</a></span>
+</footer>
+
+<script>
+  // Show the latest version and direct download links when a release exists. If anything fails, the buttons
+  // above still go to the Releases page, so nothing depends on this.
+  const REPO = 'RobArtCap45/Loom';
+  const os = /Mac/i.test(navigator.platform) ? 'mac' : /Win/i.test(navigator.platform) ? 'win' : /Linux|X11/i.test(navigator.userAgent) ? 'linux' : '';
+  if (os) { const el = document.getElementById('dl-' + os); if (el) el.classList.add('yours'); }
+  fetch('https://api.github.com/repos/' + REPO + '/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+    .then((r) => (r.ok ? r.json() : Promise.reject()))
+    .then((rel) => {
+      const pick = (re) => (rel.assets || []).find((a) => re.test(a.name));
+      const links = { mac: pick(/mac-arm64\.dmg$/) || pick(/\.dmg$/), win: pick(/Setup.*\.exe$/) || pick(/\.exe$/), linux: pick(/\.AppImage$/) };
+      Object.entries(links).forEach(([k, a]) => { if (a) document.getElementById('dl-' + k).href = a.browser_download_url; });
+      document.getElementById('dl-sub').textContent = 'Latest version: ' + rel.tag_name + '. Desktop apps for macOS, Windows and Linux, or open it in your browser.';
+    })
+    .catch(() => { document.getElementById('dl-sub').textContent = 'The first desktop release is on its way. Until then, Loom works in your browser: nothing to install.'; });
+</script>
+</body>
+</html>
