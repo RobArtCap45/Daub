@@ -25,9 +25,17 @@ It is plain HTML, CSS and JavaScript. There is nothing to compile, so any static
    - Environment variable (if asked): `NODE_VERSION` = `22`
 3. Save and deploy. Every push to `main` redeploys the site, and every pull request gets a preview link.
 
-## Add your domain
+## Add the domain: daubdesign.app
 
-Buy the domain in **Domain Registration** in the same Cloudflare account (Cloudflare sells domains at cost, with no markup). Then open your Pages project → **Custom domains → Set up a domain** and enter it. Cloudflare creates the DNS records and the HTTPS certificate for you. Add `www` as a second custom domain if you want both to work.
+The project's domain is **daubdesign.app**. If it was bought through Cloudflare (Domain Registration), it is already in your account.
+
+1. Open your Pages project → **Custom domains → Set up a domain**, enter `daubdesign.app`, and confirm. Cloudflare adds the DNS record and the HTTPS certificate for you; it takes a minute or two.
+2. Optional: make `www.daubdesign.app` go to the main address. Add `www.daubdesign.app` as a custom domain as well, then in the domain's **Rules → Redirect Rules** send `www.daubdesign.app` to `https://daubdesign.app` (301).
+3. The site is then at https://daubdesign.app/ and the web app at https://daubdesign.app/app/.
+
+`.app` domains only work over HTTPS (browsers enforce it), which is what Pages provides by default, so there is nothing to configure.
+
+The site's address appears in a few files: `website/index.html` (canonical and social-preview tags), `website/robots.txt`, `website/sitemap.xml`, and `homepage` in `package.json`. Change them together if the domain ever changes.
 
 ## Download buttons
 

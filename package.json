@@ -3,7 +3,7 @@
   "productName": "Daub",
   "version": "0.1.0",
   "description": "An open-source studio for designers and creative coders: vector design, node-based generative art, a text language and Processing-style code, in one canvas.",
-  "homepage": "https://github.com/RobArtCap45/Daub",
+  "homepage": "https://daubdesign.app",
   "bugs": "https://github.com/RobArtCap45/Daub/issues",
   "repository": { "type": "git", "url": "git+https://github.com/RobArtCap45/Daub.git" },
   "license": "CC0-1.0",

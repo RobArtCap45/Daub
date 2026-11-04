@@ -25,7 +25,7 @@ No account, no cloud, no build step for the app itself. A sketch is one `.daub.j
 
 ## Get Daub
 
-- **In your browser:** open `app/index.html`, or run `npm run web` and visit http://localhost:8080. The hosted version lives at the project website.
+- **In your browser:** open `app/index.html`, or run `npm run web` and visit http://localhost:8080. The hosted version is at **https://daubdesign.app/app/**.
 - **Desktop app (macOS, Windows, Linux):** download an installer from [**Releases**](https://github.com/RobArtCap45/Daub/releases/latest).
 - **From source:**
 
