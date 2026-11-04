@@ -1,0 +1,35 @@
+name: Bug report
+description: Something does not work the way you expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations: { required: true }
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The shortest list of steps that shows it. Attaching a saved sketch (File → Save) helps a lot.
+      placeholder: |
+        1. Open Examples → Star field
+        2. ...
+    validations: { required: true }
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where are you using Loom?
+      options: [Desktop app on macOS, Desktop app on Windows, Desktop app on Linux, Web app in Chrome / Edge, Web app in Firefox, Web app in Safari, Other]
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The desktop app shows it under Loom → About (macOS) or Help. For the web, give the date you loaded it.
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Screenshots, error messages (open View → Toggle Developer Tools → Console).

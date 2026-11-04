@@ -1,0 +1,20 @@
+name: Idea or feature request
+description: Something you would like Loom to do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to make?
+      description: Describe the thing you want to create or the problem you hit. That is more useful than describing a feature.
+    validations: { required: true }
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: If you have an idea for how it could work, sketch it here. Other tools you have seen do it well? Describe how, but please do not paste their code or docs.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part?
+      options: [Design, Nodes, Script, Code, Desktop app, Website, Docs, Not sure]

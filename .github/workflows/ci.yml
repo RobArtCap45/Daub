@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Node reference is up to date
+        run: |
+          npm run docs
+          git diff --exit-code docs/node-reference.md || (echo "docs/node-reference.md is out of date. Run 'npm run docs' and commit the result." && exit 1)
+
+  desktop-smoke:
+    name: Desktop app starts (Linux)
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Opens the real Electron app on a virtual display, uses each workspace, and exits 0 only if everything works.
+      - run: xvfb-run -a npx electron . --smoke-test --no-sandbox --disable-gpu
+
+  site:
+    name: Website builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: node scripts/build-site.js
+      - run: test -f _site/index.html && test -f _site/app/index.html
