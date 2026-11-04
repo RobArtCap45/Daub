@@ -1,9 +1,9 @@
 # Architecture
 
-Loom is plain JavaScript that runs in a browser tab or in the Electron desktop wrapper. There is no framework and no build step for the app itself: `app/index.html` loads the scripts in `app/src/` in order.
+Daub is plain JavaScript that runs in a browser tab or in the Electron desktop wrapper. There is no framework and no build step for the app itself: `app/index.html` loads the scripts in `app/src/` in order.
 
 ```
-loom/
+daub/
 ├── app/                 the app. Open app/index.html and it runs.
 │   ├── index.html       page shell, content-security-policy
 │   ├── *.css            style.css (base, node editor), design.css (Design tab, dialogs), script.css (Script tab)
@@ -78,7 +78,7 @@ The Script language picks the new node up automatically: its name is its key in 
 - `examples.scripts`: Script-tab text. `tests/script.test.js` compiles every one and checks that it draws something.
 - `examples.code` (in `examples-code.js`): Code-tab sketches, grouped by `cat`.
 
-**Write your own.** Loom's examples must be original work. Do not copy example programs or documentation text from Processing, NodeBox or other projects; their licenses are different from this repository's.
+**Write your own.** Daub's examples must be original work. Do not copy example programs or documentation text from Processing, NodeBox or other projects; their licenses are different from this repository's.
 
 ## Tests
 

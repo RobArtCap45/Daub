@@ -1,9 +1,9 @@
-// Loom script tests. Run with:  node tests/script.test.js
+// Daub script tests. Run with:  node tests/script.test.js
 global.window = global;
 require('../app/src/engine.js');
 require('../app/src/script.js');
 require('../app/src/examples.js');
-const L = window.Loom, S = L.script;
+const L = window.Daub, S = L.script;
 let failed = 0;
 const check = (name, ok, detail = '') => { console.log((ok ? 'PASS ' : 'FAIL ') + name + (detail ? '  ' + detail : '')); if (!ok) failed++; };
 const clone = (o) => JSON.parse(JSON.stringify(o));

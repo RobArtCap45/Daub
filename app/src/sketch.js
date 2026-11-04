@@ -1,14 +1,14 @@
-/* Loom code mode: a Processing-style API over Canvas 2D (JavaScript flavour).
+/* Daub code mode: a Processing-style API over Canvas 2D (JavaScript flavour).
  * Origin top-left, y down. setup() once, draw() every frame.
  * Colors: colorMode(RGB) -> 0-255 channels; colorMode(HSB) -> h 0-360, s 0-100, b 0-100, a 0-1.
  *         colorMode(mode, max1, max2, max3, maxA) overrides ranges, as in Processing.
  */
 (function (g) {
   'use strict';
-  const { hsb, noise3, mulberry32 } = g.Loom;
+  const { hsb, noise3, mulberry32 } = g.Daub;
   const TAU = Math.PI * 2;
 
-  g.Loom.createSketch = function (c, W, H, dpr, code) {
+  g.Daub.createSketch = function (c, W, H, dpr, code) {
     let rng = mulberry32(1), noiseOff = 0, spare = null;
     let looping = true, redrawOnce = false, fps = 60, t0 = performance.now();
     const MAXES = { rgb: [255, 255, 255, 255], hsb: [360, 100, 100, 1] };

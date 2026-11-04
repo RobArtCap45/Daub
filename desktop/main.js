@@ -1,4 +1,4 @@
-// Loom desktop app (Electron main process).
+// Daub desktop app (Electron main process).
 // It opens app/index.html in a window, adds a native menu, and keeps the page locked down:
 // no Node.js in the page, no navigation away from the app, links open in your browser.
 'use strict';
@@ -8,16 +8,16 @@ const path = require('path');
 
 const isMac = process.platform === 'darwin';
 const smokeTest = process.argv.includes('--smoke-test'); // used by CI: open the app, check it works, exit
-const REPO = 'https://github.com/RobArtCap45/Loom';
+const REPO = 'https://github.com/RobArtCap45/Daub';
 
 let win = null;
 
-if (!smokeTest && !app.requestSingleInstanceLock()) app.quit(); // one Loom window per user; a second launch focuses the first
+if (!smokeTest && !app.requestSingleInstanceLock()) app.quit(); // one Daub window per user; a second launch focuses the first
 app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
 if (smokeTest) app.disableHardwareAcceleration();
 
-app.setName('Loom');
-app.setAboutPanelOptions({ applicationName: 'Loom', applicationVersion: app.getVersion(), copyright: 'Released under CC0', website: REPO });
+app.setName('Daub');
+app.setAboutPanelOptions({ applicationName: 'Daub', applicationVersion: app.getVersion(), copyright: 'Released under CC0', website: REPO });
 
 function createWindow() {
   win = new BrowserWindow({
@@ -27,7 +27,7 @@ function createWindow() {
     minHeight: 620,
     show: false,
     backgroundColor: '#f3f3f1',
-    title: 'Loom',
+    title: 'Daub',
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -84,12 +84,12 @@ function buildMenu() {
       role: 'help',
       submenu: [
         ...(isMac ? [] : [
-          { label: 'About Loom', click: () => dialog.showMessageBox(win, { type: 'info', title: 'About Loom', message: 'Loom ' + app.getVersion(), detail: 'Released under CC0 (public domain).\n' + REPO }) },
+          { label: 'About Daub', click: () => dialog.showMessageBox(win, { type: 'info', title: 'About Daub', message: 'Daub ' + app.getVersion(), detail: 'Released under CC0 (public domain).\n' + REPO }) },
           { type: 'separator' },
         ]),
         { label: 'Documentation', click: () => shell.openExternal(REPO + '/tree/main/docs') },
         { label: 'Report an Issue', click: () => shell.openExternal(REPO + '/issues/new/choose') },
-        { label: 'Loom on GitHub', click: () => shell.openExternal(REPO) },
+        { label: 'Daub on GitHub', click: () => shell.openExternal(REPO) },
       ],
     },
   ];
@@ -110,17 +110,17 @@ function runSmokeTest() {
     try {
       const result = await win.webContents.executeJavaScript(`(async () => {
         const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-        const out = { desktopBridge: !!(window.loomDesktop && window.loomDesktop.platform), tabs: document.querySelectorAll('.tabs button').length };
-        out.nodesExample = Loom.evaluate(Loom.app.editor.project, { time: 0 }).geo.length;
-        for (const tab of ['design', 'script', 'code', 'nodes']) { Loom.app.setMode(tab); await wait(150); }
-        out.scriptRoundTrip = Loom.script.compile(Loom.script.decompile(Loom.app.editor.project)).nodes.length;
+        const out = { desktopBridge: !!(window.daubDesktop && window.daubDesktop.platform), tabs: document.querySelectorAll('.tabs button').length };
+        out.nodesExample = Daub.evaluate(Daub.app.editor.project, { time: 0 }).geo.length;
+        for (const tab of ['design', 'script', 'code', 'nodes']) { Daub.app.setMode(tab); await wait(150); }
+        out.scriptRoundTrip = Daub.script.compile(Daub.script.decompile(Daub.app.editor.project)).nodes.length;
         // regression: load an example while another tab is open; the node graph must still be framed when you return
-        Loom.app.setMode('design'); await wait(100);
+        Daub.app.setMode('design'); await wait(100);
         document.querySelector('#exMenu summary').click(); [...document.querySelectorAll('#exList button')].find((b) => b.textContent === 'Star field').click(); await wait(400);
         { const g = document.querySelector('#graph').getBoundingClientRect(), nodes = [...document.querySelectorAll('#graph .node')];
           out.graphFits = nodes.length > 0 && nodes.every((n) => { const q = n.getBoundingClientRect(); return q.left >= g.left - 2 && q.right <= g.right + 2 && q.top >= g.top - 2 && q.bottom <= g.bottom + 2; }); }
-        const code = Loom.examples.code.find((e) => e.name === 'Flocking');
-        Loom.app.setMode('code'); document.querySelector('#code').value = code.code; document.querySelector('#run').click(); await wait(400);
+        const code = Daub.examples.code.find((e) => e.name === 'Flocking');
+        Daub.app.setMode('code'); document.querySelector('#code').value = code.code; document.querySelector('#run').click(); await wait(400);
         out.codeStatus = document.querySelector('#status').textContent;
         out.canvasHasColor = (() => { const c = document.querySelector('#cv'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; const seen = new Set(); for (let i = 0; i < d.length; i += 4 * 211) seen.add(d[i] + ',' + d[i + 1] + ',' + d[i + 2]); return seen.size > 1; })();
         return out;

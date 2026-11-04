@@ -1,4 +1,4 @@
-/* Loom engine: node definitions, graph evaluation, rendering, SVG export.
+/* Daub engine: node definitions, graph evaluation, rendering, SVG export.
  *
  * Data flow: a graph is { nodes:[{id,type,x,y,params}], edges:[{from,to,input}] }.
  * Values are numbers, lists of numbers, point lists ("pts") or geometry lists ("geo").
@@ -914,5 +914,5 @@
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">\n  <rect width="${W}" height="${H}" fill="${scene.bg}"/>\n  <g transform="translate(${W / 2} ${H / 2})">\n    ${body}\n  </g>\n</svg>\n`;
   }
 
-  g.Loom = Object.assign(g.Loom || {}, { NODES, PORT_COLORS, getDef, validProject, shapeBounds, compoundShapes, booleanRegions, bakeCmds, compat, penCmds, cmdsToD, flatten, tracePath, drawShapes, designShape, designShapes, valueAt, EASE, isOpen, evaluate, drawScene, toSVG, hsb, noise3, mulberry32 });
+  g.Daub = Object.assign(g.Daub || {}, { NODES, PORT_COLORS, getDef, validProject, shapeBounds, compoundShapes, booleanRegions, bakeCmds, compat, penCmds, cmdsToD, flatten, tracePath, drawShapes, designShape, designShapes, valueAt, EASE, isOpen, evaluate, drawScene, toSVG, hsb, noise3, mulberry32 });
 })(window);

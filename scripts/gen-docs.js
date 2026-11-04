@@ -6,8 +6,8 @@ const path = require('path');
 global.window = global;
 require('../app/src/engine.js');
 require('../app/src/script.js');
-const { NODES } = window.Loom;
-const { reference } = window.Loom.script;
+const { NODES } = window.Daub;
+const { reference } = window.Daub.script;
 
 const TYPE = { num: 'number or list', geo: 'shapes', pts: 'points', any: 'any list', enum: 'choice', svg: 'SVG file', draw: 'drawn path' };
 const OUT = { num: 'numbers', geo: 'shapes', pts: 'points', any: 'a list' };

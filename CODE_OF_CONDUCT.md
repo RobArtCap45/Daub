@@ -1,6 +1,6 @@
 # Code of conduct
 
-Loom is for designers, artists, students, hobbyists and programmers, and it works best when all of them feel welcome here.
+Daub is for designers, artists, students, hobbyists and programmers, and it works best when all of them feel welcome here.
 
 ## What we expect
 

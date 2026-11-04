@@ -1,11 +1,11 @@
 /* Code sketches in the spirit of the classic "learn to program with Processing" topics.
- * Every program here is original and written for Loom's Processing-style API (see src/sketch.js).
+ * Every program here is original and written for Daub's Processing-style API (see src/sketch.js).
  * Colors: after colorMode(HSB): hue 0-360, saturation 0-100, brightness 0-100, alpha 0-1. In RGB mode: 0-255.
  */
 (function (g) {
   'use strict';
-  const ex = g.Loom.examples;
-  ex.code.forEach((e) => { e.cat = e.cat || 'Loom'; });
+  const ex = g.Daub.examples;
+  ex.code.forEach((e) => { e.cat = e.cat || 'Daub'; });
   const add = (cat, list) => list.forEach(([name, code]) => ex.code.push({ cat, name, code }));
 
   add('Color', [

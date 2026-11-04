@@ -1,4 +1,4 @@
-/* Loom script: a small text language that compiles to node graphs, and back.
+/* Daub script: a small text language that compiles to node graphs, and back.
  *
  *   let pts = grid(14, 14, 460, 460)                  // call a node like a function; name a value with let
  *   star(5, 22, 10)                                   // arguments: positional, or name: value
@@ -13,7 +13,7 @@
  */
 (function (g) {
   'use strict';
-  const L = g.Loom, { NODES, getDef, compat } = L;
+  const L = g.Daub, { NODES, getDef, compat } = L;
 
   class ScriptError extends Error { constructor(msg, pos) { super(msg); this.line = pos ? pos.line : 0; this.col = pos ? pos.col : 0; } }
   const fail = (msg, pos) => { throw new ScriptError(msg, pos); };
@@ -442,5 +442,5 @@
     return rows;
   }
 
-  g.Loom.script = { compile, decompile, reference, ScriptError, slug };
+  g.Daub.script = { compile, decompile, reference, ScriptError, slug };
 })(window);

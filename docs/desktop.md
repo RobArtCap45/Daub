@@ -5,7 +5,7 @@ The desktop app is the same web app in an [Electron](https://www.electronjs.org/
 | File | What it does |
 | --- | --- |
 | `desktop/main.js` | Opens the window, builds the native menu, keeps the page locked down, and runs the `--smoke-test`. |
-| `desktop/preload.js` | Gives the page one small object, `window.loomDesktop`, so menu items can press the app's buttons. |
+| `desktop/preload.js` | Gives the page one small object, `window.daubDesktop`, so menu items can press the app's buttons. |
 | `desktop/build/icon.png` | The app icon (1024 × 1024). electron-builder turns it into `.icns` and `.ico` files. |
 
 ## Run it
@@ -47,7 +47,7 @@ You can also run the workflow by hand (*Actions → Release → Run workflow*). 
 
 Without signing, the installers work, but each system warns people:
 
-- **macOS** says the app is from an unidentified developer. People can right-click → *Open* the first time. On Apple Silicon an unsigned app may need `xattr -cr /Applications/Loom.app` after downloading.
+- **macOS** says the app is from an unidentified developer. People can right-click → *Open* the first time. On Apple Silicon an unsigned app may need `xattr -cr /Applications/Daub.app` after downloading.
 - **Windows** SmartScreen says “Windows protected your PC”. People choose *More info → Run anyway*.
 
 To sign, add these **repository secrets** (*Settings → Secrets and variables → Actions*). The workflow already reads them; when they are missing it just skips signing.

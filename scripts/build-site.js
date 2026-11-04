@@ -1,6 +1,6 @@
 // Assemble the website for hosting (Cloudflare Pages, GitHub Pages, any static host):
 //   _site/            the landing page (website/)
-//   _site/app/        the Loom web app (app/), so "Try it in your browser" works
+//   _site/app/        the Daub web app (app/), so "Try it in your browser" works
 // Usage: node scripts/build-site.js     (output folder: _site)
 const fs = require('fs');
 const path = require('path');

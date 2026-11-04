@@ -336,5 +336,5 @@ movePoints(pts, dy: dy)
     },
   ];
 
-  g.Loom.examples = { nodes, code, designs, scripts };
+  g.Daub.examples = { nodes, code, designs, scripts };
 })(window);

@@ -16,4 +16,4 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' });
     res.end(data);
   });
-}).listen(port, '127.0.0.1', () => console.log(`Loom is running at http://localhost:${port}  (Ctrl+C to stop)`));
+}).listen(port, '127.0.0.1', () => console.log(`Daub is running at http://localhost:${port}  (Ctrl+C to stop)`));

@@ -1,4 +1,4 @@
-/* Loom node editor: DOM nodes + SVG wires, pan/zoom, multi-select, custom nodes (subnetworks).
+/* Daub node editor: DOM nodes + SVG wires, pan/zoom, multi-select, custom nodes (subnetworks).
  *
  * project  = root graph { nodes, edges, subs }      (what gets saved)
  * graph    = the graph currently shown (root, or a custom node's inside)
@@ -6,7 +6,7 @@
  */
 (function (g) {
   'use strict';
-  const { PORT_COLORS, getDef } = g.Loom;
+  const { PORT_COLORS, getDef } = g.Daub;
   const SVGNS = 'http://www.w3.org/2000/svg';
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
   const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -308,10 +308,10 @@
       } else {
         const p = n.params.path, box = el('div', 'thumb');
         if (p && p.pts && p.pts.length > 1) {
-          const cmds = g.Loom.penCmds(p), xs = [], ys = [];
+          const cmds = g.Daub.penCmds(p), xs = [], ys = [];
           p.pts.forEach((q) => { xs.push(q.x, q.x + (q.ox || 0), q.x + (q.ix || 0)); ys.push(q.y, q.y + (q.oy || 0), q.y + (q.iy || 0)); });
           const x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(10, Math.max(...xs) - x0), h = Math.max(10, Math.max(...ys) - y0), pad = Math.max(w, h) * 0.08;
-          box.innerHTML = `<svg viewBox="${x0 - pad} ${y0 - pad} ${w + pad * 2} ${h + pad * 2}" preserveAspectRatio="xMidYMid meet"><path d="${g.Loom.cmdsToD(cmds)}" fill="${p.closed ? '#e8483a22' : 'none'}" stroke="#444" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+          box.innerHTML = `<svg viewBox="${x0 - pad} ${y0 - pad} ${w + pad * 2} ${h + pad * 2}" preserveAspectRatio="xMidYMid meet"><path d="${g.Daub.cmdsToD(cmds)}" fill="${p.closed ? '#e8483a22' : 'none'}" stroke="#444" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
         } else box.textContent = 'Empty';
         const b = el('button', 'wbtn', p && p.pts && p.pts.length ? 'Edit shape…' : 'Draw shape…'); b.onclick = () => this.onEditDraw && this.onEditDraw(n.id);
         row.append(box, b);
@@ -356,5 +356,5 @@
     }
   }
 
-  g.Loom.Editor = Editor;
+  g.Daub.Editor = Editor;
 })(window);

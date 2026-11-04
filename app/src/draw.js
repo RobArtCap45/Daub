@@ -1,10 +1,10 @@
-/* Loom pen editor: a full-screen overlay to draw a bezier shape.
+/* Daub pen editor: a full-screen overlay to draw a bezier shape.
  * Click = corner point, click-drag = smooth point with handles, click the first point to close.
  * Drag points/handles to adjust (Alt = move one handle alone), Delete removes the selected point, Shift snaps to a grid.
  */
 (function (g) {
   'use strict';
-  const { penCmds } = g.Loom;
+  const { penCmds } = g.Daub;
   const $ = (s) => document.querySelector(s);
   const SPAN = 600; // world units across the square stage (-300..300)
 
@@ -111,5 +111,5 @@
     layout();
   }
 
-  g.Loom.drawEditor = { open };
+  g.Daub.drawEditor = { open };
 })(window);

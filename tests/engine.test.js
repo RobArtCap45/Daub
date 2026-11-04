@@ -1,7 +1,7 @@
 // Engine tests. Run with:  node tests/engine.test.js
 global.window = global;
 require('../app/src/engine.js');
-const L = window.Loom;
+const L = window.Daub;
 let failed = 0;
 const near = (a, b, tol) => Math.abs(a - b) <= tol;
 const check = (name, ok, detail = '') => { console.log((ok ? 'PASS ' : 'FAIL ') + name + (detail ? '  ' + detail : '')); if (!ok) failed++; };

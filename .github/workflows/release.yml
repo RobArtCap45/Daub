@@ -77,7 +77,7 @@ jobs:
         if: env.PUBLISH == 'never'
         uses: actions/upload-artifact@v4
         with:
-          name: loom-${{ matrix.target }}
+          name: daub-${{ matrix.target }}
           path: |
             dist/*.dmg
             dist/*.zip

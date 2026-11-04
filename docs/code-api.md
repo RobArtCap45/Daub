@@ -26,7 +26,7 @@ function draw() {
 
 ## Examples
 
-**Examples → Code** has 61 sketches grouped by learning topic: color, control, forms, input, math, structure, transform, typography, cellular automata, drawing, fractals, interaction, motion, simulation and vectors. They are original programs written for Loom. They are *not* copies of the Processing examples, which are under a different license.
+**Examples → Code** has 61 sketches grouped by learning topic: color, control, forms, input, math, structure, transform, typography, cellular automata, drawing, fractals, interaction, motion, simulation and vectors. They are original programs written for Daub. They are *not* copies of the Processing examples, which are under a different license.
 
 ## Not supported (yet)
 

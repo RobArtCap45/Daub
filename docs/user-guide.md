@@ -1,6 +1,6 @@
 # User guide
 
-Loom has four workspaces, switched with the tabs at the top. They all work on the same sketch, and **File → Save** keeps everything in one `.loom.json` file.
+Daub has four workspaces, switched with the tabs at the top. They all work on the same sketch, and **File → Save** keeps everything in one `.daub.json` file.
 
 | Tab | What it is for |
 | --- | --- |

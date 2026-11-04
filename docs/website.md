@@ -3,7 +3,7 @@
 The website is two static things, built into one folder:
 
 - `website/`: the landing page (`index.html`, `style.css`, screenshots in `assets/`).
-- `app/`: the Loom web app, so "Try it in your browser" works.
+- `app/`: the Daub web app, so "Try it in your browser" works.
 
 `npm run build:site` (or `node scripts/build-site.js`) copies both into `_site/`:
 

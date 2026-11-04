@@ -1,7 +1,7 @@
-/* Loom app: tabs, render loop, examples, undo/redo, import/export, autosave. */
+/* Daub app: tabs, render loop, examples, undo/redo, import/export, autosave. */
 (function () {
   'use strict';
-  const { NODES, Editor, examples, validProject } = window.Loom;
+  const { NODES, Editor, examples, validProject } = window.Daub;
   const $ = (s) => document.querySelector(s);
   const W = 600, H = 600, dpr = Math.min(2, window.devicePixelRatio || 1);
   const cv = $('#cv'); cv.width = W * dpr; cv.height = H * dpr;
@@ -12,8 +12,12 @@
   let acc = 0, mode = 'nodes', playing = true, time = 0, last = performance.now(), sketch = null, lastScene = null;
   let graph = clone(examples.nodes[0].graph);
   $('#code').value = DEFAULT_CODE;
+  try { // this app used to be called Loom: carry over a sketch (and the welcome-card flag) saved under the old names
+    if (!localStorage.getItem('daub.v1') && localStorage.getItem('loom.v1')) localStorage.setItem('daub.v1', localStorage.getItem('loom.v1'));
+    if (!localStorage.getItem('daub.seen') && localStorage.getItem('loom.seen')) localStorage.setItem('daub.seen', '1');
+  } catch (e) { /* ignore */ }
   try {
-    const saved = JSON.parse(localStorage.getItem('loom.v1') || 'null');
+    const saved = JSON.parse(localStorage.getItem('daub.v1') || 'null');
     if (saved && saved.graph && validProject(saved.graph)) { graph = saved.graph; $('#code').value = saved.code || DEFAULT_CODE; }
   } catch (e) { /* ignore */ }
 
@@ -21,20 +25,20 @@
   let toastTimer;
   const toast = (msg, ms = 2600) => { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); if (ms) toastTimer = setTimeout(() => { t.hidden = true; }, ms); };
   let saveTimer;
-  const autosave = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem('loom.v1', JSON.stringify({ graph: editor.project, code: $('#code').value })); } catch (e) { /* ignore */ } }, 400); };
+  const autosave = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem('daub.v1', JSON.stringify({ graph: editor.project, code: $('#code').value })); } catch (e) { /* ignore */ } }, 400); };
 
   // ---- undo / redo (snapshots of the node graph)
   let hist = [], hi = 0, histTimer;
   const flush = () => { clearTimeout(histTimer); const s = JSON.stringify(editor.project); if (s !== hist[hi]) { hist.length = hi + 1; hist.push(s); hi++; if (hist.length > 100) { hist.shift(); hi--; } } };
   const commit = () => { clearTimeout(histTimer); histTimer = setTimeout(flush, 300); };
-  const restore = (k) => { flush(); const t = hi + k; if (t < 0 || t >= hist.length) return; hi = t; editor.setProject(JSON.parse(hist[hi]), false, true); window.Loom.design.refresh(); autosave(); if (!playing || mode === 'nodes') renderNodes(); };
+  const restore = (k) => { flush(); const t = hi + k; if (t < 0 || t >= hist.length) return; hi = t; editor.setProject(JSON.parse(hist[hi]), false, true); window.Daub.design.refresh(); autosave(); if (!playing || mode === 'nodes') renderNodes(); };
   // replace the whole project (examples, Open…)
-  const loadProject = (p) => { editor.setProject(p); resetHistory(); window.Loom.design.refresh(); autosave(); };
+  const loadProject = (p) => { editor.setProject(p); resetHistory(); window.Daub.design.refresh(); autosave(); };
   const resetHistory = () => { hist = [JSON.stringify(editor.project)]; hi = 0; };
 
   const editor = new Editor($('#graph'), graph, () => { autosave(); commit(); if (!playing) renderNodes(); });
   resetHistory();
-  window.Loom.design.init({
+  window.Daub.design.init({
     project: () => editor.project, changed: (soft) => { autosave(); if (soft) commit(); else flush(); }, status: toast,
     isPlaying: () => playing, setPlaying: (v) => { playing = v; },
   });
@@ -85,8 +89,8 @@
     try {
       c.setTransform(dpr, 0, 0, dpr, 0, 0);
       const sid = editor.stack.length ? editor.stack[editor.stack.length - 1] : null;
-      lastScene = window.Loom.evaluate(editor.project, { time }, sid);
-      window.Loom.drawScene(c, W, H, lastScene);
+      lastScene = window.Daub.evaluate(editor.project, { time }, sid);
+      window.Daub.drawScene(c, W, H, lastScene);
       status(lastScene.preview ? `Previewing “${editor.sub.name}” · ${lastScene.geo.length} shapes`
         : lastScene.notGeo ? 'This custom node outputs numbers or points, so the whole sketch is shown.' : `${lastScene.geo.length} shapes`);
     } catch (e) { status(e.message, true); }
@@ -95,7 +99,7 @@
     try {
       c.setTransform(dpr, 0, 0, dpr, 0, 0);
       c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
-      sketch = window.Loom.createSketch(c, W, H, dpr, $('#code').value);
+      sketch = window.Daub.createSketch(c, W, H, dpr, $('#code').value);
       sketch.setup(); sketch.draw();
       status('Running');
     } catch (e) { sketch = null; status(e.message, true); }
@@ -104,8 +108,8 @@
     requestAnimationFrame(frame);
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
     if (mode === 'design') { // the design editor draws itself; we mirror its scene onto the export canvas
-      const sc = window.Loom.design.frame(dt, playing);
-      if (sc) { c.setTransform(dpr, 0, 0, dpr, 0, 0); window.Loom.drawScene(c, W, H, sc); lastScene = sc; }
+      const sc = window.Daub.design.frame(dt, playing);
+      if (sc) { c.setTransform(dpr, 0, 0, dpr, 0, 0); window.Daub.drawScene(c, W, H, sc); lastScene = sc; }
       return;
     }
     if (!playing) return;
@@ -121,7 +125,7 @@
   }
 
   // ---- Script tab: the text language. Text <-> node graph.
-  const sc = window.Loom.script, sEl = $('#script'), sMsg = $('#sMsg');
+  const sc = window.Daub.script, sEl = $('#script'), sMsg = $('#sMsg');
   let lastSig = '', pendingTimer = null, pending = false;
   const strip = (nodes) => nodes.map((n) => [n.id, n.type, n.params]); // positions don't count as changes
   const sigOf = (p) => JSON.stringify([strip(p.nodes), p.edges, Object.entries(p.subs || {}).map(([id, s]) => [id, s.name, strip(s.nodes), s.edges, s.inputs, s.out])]);
@@ -178,14 +182,14 @@
     document.querySelector('main').classList.toggle('wide', m === 'design');
     if (m === 'nodes') editor.refresh(); // the graph may have changed while this tab was hidden (measure after the layout settles)
     if (m === 'design') playing = false; // opens paused so editing is steady; the ▶ button plays
-    if (m === 'code') runSketch(); else if (m === 'design') { window.Loom.design.show(); window.Loom.design.syncPlay(); } else renderNodes();
+    if (m === 'code') runSketch(); else if (m === 'design') { window.Daub.design.show(); window.Daub.design.syncPlay(); } else renderNodes();
   }
   document.querySelectorAll('.tabs button').forEach((b) => { b.onclick = () => setMode(b.dataset.tab); });
   const exList = $('#exList');
   const heading = (t) => { const h = document.createElement('h5'); h.textContent = t; exList.appendChild(h); };
   const item = (t, fn) => { const b = document.createElement('button'); b.textContent = t; b.onclick = fn; exList.appendChild(b); };
   heading('Design sketches');
-  (examples.designs || []).forEach((ex) => item(ex.name, () => { const p = clone(ex.graph); loadProject(p); setMode('design'); playing = true; window.Loom.design.syncPlay(); }));
+  (examples.designs || []).forEach((ex) => item(ex.name, () => { const p = clone(ex.graph); loadProject(p); setMode('design'); playing = true; window.Daub.design.syncPlay(); }));
   heading('Node sketches');
   examples.nodes.forEach((ex) => item(ex.name, () => { loadProject(clone(ex.graph)); setMode('nodes'); playing = true; }));
   heading('Script sketches');
@@ -200,9 +204,9 @@
   document.addEventListener('click', (e) => document.querySelectorAll('details.menu[open]').forEach((d) => { if (!d.contains(e.target) || e.target.closest('.pop button')) d.open = false; }));
 
   // ---- controls
-  const run = () => { playing = true; if (mode === 'code') runSketch(); window.Loom.design.syncPlay(); };
-  $('#run').onclick = run; $('#stop').onclick = () => { playing = false; window.Loom.design.syncPlay(); };
-  $('#fit').onclick = () => (mode === 'design' ? window.Loom.design.fit() : editor.fit());
+  const run = () => { playing = true; if (mode === 'code') runSketch(); window.Daub.design.syncPlay(); };
+  $('#run').onclick = run; $('#stop').onclick = () => { playing = false; window.Daub.design.syncPlay(); };
+  $('#fit').onclick = () => (mode === 'design' ? window.Daub.design.fit() : editor.fit());
   $('#undo').onclick = () => restore(-1); $('#redo').onclick = () => restore(1);
   $('#code').addEventListener('input', autosave);
   $('#code').addEventListener('keydown', (e) => {
@@ -220,7 +224,7 @@
   cv.addEventListener('keyup', (e) => { if (!sketch || mode !== 'code') return; sketch.setKey(e.key, e.keyCode, false); fireSketch('keyReleased'); });
   document.addEventListener('keydown', (e) => {
     if (!$('#pen').hidden) return; // the pen editor handles its own keys
-    if (mode === 'design' && window.Loom.design.key(e)) return;
+    if (mode === 'design' && window.Daub.design.key(e)) return;
     if (mode === 'code' && document.activeElement === cv && !(e.ctrlKey || e.metaKey)) return; // the sketch owns the keyboard while its canvas has focus
     const t = e.target, typing = t.matches && t.matches('input:not([type=color]):not([type=checkbox]),textarea,select,[contenteditable="true"]');
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !(t.matches && t.matches('textarea'))) { e.preventDefault(); restore(e.shiftKey ? 1 : -1); }
@@ -231,14 +235,14 @@
     else if (e.key === 'Enter' && mode === 'nodes') { const n = editor.selectedNodes()[0]; if (n && n.type.startsWith('sub:')) editor.enter(n.type.slice(4)); }
     else if ((e.key === 'Delete' || e.key === 'Backspace') && mode === 'nodes') { e.preventDefault(); editor.deleteSelected(); }
     else if (e.key.toLowerCase() === 'f' && mode === 'nodes') editor.fit();
-    else if (e.key.toLowerCase() === 'f' && mode === 'design') window.Loom.design.fit();
-    else if (e.key === ' ') { e.preventDefault(); if (playing) { playing = false; window.Loom.design.syncPlay(); } else run(); }
+    else if (e.key.toLowerCase() === 'f' && mode === 'design') window.Daub.design.fit();
+    else if (e.key === ' ') { e.preventDefault(); if (playing) { playing = false; window.Daub.design.syncPlay(); } else run(); }
   });
 
   // ---- pen drawing and SVG import
   editor.onEditDraw = (id) => {
     const n = editor.graph.nodes.find((x) => x.id === id); if (!n) return;
-    window.Loom.drawEditor.open(n.params.path, (res) => { if (res) { n.params.path = res; editor.rebuild(); editor.changed(); } });
+    window.Daub.drawEditor.open(n.params.path, (res) => { if (res) { n.params.path = res; editor.rebuild(); editor.changed(); } });
   };
   const importSvgFile = async (file, pos) => {
     if (!file) return;
@@ -285,8 +289,8 @@
 
   // ---- welcome card
   const welcome = $('#welcome');
-  const seen = () => { try { return localStorage.getItem('loom.seen'); } catch (e) { return '1'; } };
-  const dismiss = () => { welcome.hidden = true; try { localStorage.setItem('loom.seen', '1'); } catch (e) { /* ignore */ } };
+  const seen = () => { try { return localStorage.getItem('daub.seen'); } catch (e) { return '1'; } };
+  const dismiss = () => { welcome.hidden = true; try { localStorage.setItem('daub.seen', '1'); } catch (e) { /* ignore */ } };
   if (!seen()) welcome.hidden = false;
   $('#welcomeOk').onclick = dismiss;
   $('#help').onclick = () => { setMode('nodes'); welcome.hidden = false; };
@@ -294,17 +298,17 @@
 
   // ---- files
   const download = (name, blob) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
-  $('#png').onclick = () => cv.toBlob((b) => download('loom.png', b));
+  $('#png').onclick = () => cv.toBlob((b) => download('daub.png', b));
   $('#svg').onclick = () => {
     if (mode === 'code' || !lastScene) return toast('SVG export works from the Design and Nodes tabs.');
-    download('loom.svg', new Blob([window.Loom.toSVG(lastScene, W, H)], { type: 'image/svg+xml' }));
+    download('daub.svg', new Blob([window.Daub.toSVG(lastScene, W, H)], { type: 'image/svg+xml' }));
   };
-  $('#save').onclick = () => download('sketch.loom.json', new Blob([JSON.stringify({ version: 2, graph: editor.project, code: $('#code').value }, null, 2)], { type: 'application/json' }));
+  $('#save').onclick = () => download('sketch.daub.json', new Blob([JSON.stringify({ version: 2, graph: editor.project, code: $('#code').value }, null, 2)], { type: 'application/json' }));
   $('#open').onclick = () => $('#file').click();
   $('#file').onchange = async (e) => {
     try {
       const d = JSON.parse(await e.target.files[0].text());
-      if (!d.graph || !validProject(d.graph)) throw new Error('That file is not a Loom sketch.');
+      if (!d.graph || !validProject(d.graph)) throw new Error('That file is not a Daub sketch.');
       loadProject(d.graph); $('#code').value = d.code || DEFAULT_CODE; autosave(); setMode(d.graph.design && d.graph.design.shapes.length && d.graph.nodes.length <= 1 ? 'design' : 'nodes');
     } catch (err) { status(err.message, true); }
     e.target.value = '';
@@ -329,18 +333,18 @@
     const secs = await askNumber('Export video', 'How many seconds should the video be? (1–120)', def);
     if (!(secs > 0) || secs > 120) return;
     playing = true; time = 0;
-    if (mode === 'design') window.Loom.design.setTime(0); else if (mode === 'code') runSketch();
+    if (mode === 'design') window.Daub.design.setTime(0); else if (mode === 'code') runSketch();
     const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
     const rec = new MediaRecorder(cv.captureStream(30), { mimeType: mime, videoBitsPerSecond: 8e6 }), chunks = [];
     rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
-    rec.onstop = () => { download('loom.webm', new Blob(chunks, { type: 'video/webm' })); toast('Saved loom.webm'); };
+    rec.onstop = () => { download('daub.webm', new Blob(chunks, { type: 'video/webm' })); toast('Saved daub.webm'); };
     rec.start(); toast(`Recording ${secs}s…`, 0); setTimeout(() => rec.stop(), secs * 1000);
   };
 
   // ---- desktop app (Electron): native menu commands arrive here and press the matching button
-  if (window.loomDesktop) {
-    document.body.classList.add('desktop', window.loomDesktop.platform);
-    window.loomDesktop.onMenu((action) => {
+  if (window.daubDesktop) {
+    document.body.classList.add('desktop', window.daubDesktop.platform);
+    window.daubDesktop.onMenu((action) => {
       const typing = document.activeElement && document.activeElement.matches('textarea,input:not([type=color]):not([type=checkbox])');
       if (action === 'undo' || action === 'redo') {
         if (typing) document.execCommand(action); // inside a text box, undo the typing
@@ -352,7 +356,7 @@
     });
   }
 
-  window.Loom.app = { editor, runSketch, renderNodes, setMode, toast };
+  window.Daub.app = { editor, runSketch, renderNodes, setMode, toast };
   renderNodes();
   requestAnimationFrame(frame);
 })();

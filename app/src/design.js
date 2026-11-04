@@ -1,9 +1,9 @@
-/* Loom Design: a vector editor with layers, a pen tool and a keyframe timeline.
+/* Daub Design: a vector editor with layers, a pen tool and a keyframe timeline.
  * The document lives in project.design and feeds the node graph through the "Design" node.
  */
 (function (g) {
   'use strict';
-  const L = g.Loom;
+  const L = g.Daub;
   const $ = (s) => document.querySelector(s);
   const hc = document.createElement('canvas').getContext('2d');
   const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -516,5 +516,5 @@
   }
 
   const syncPlay = () => { const b = $('#tlPlay'); if (b && hooks) b.textContent = hooks.isPlaying() ? '⏸' : '▶'; };
-  g.Loom.design = { init, show, refresh, frame, fit, key, setTime, syncPlay, get time() { return D.time; }, get pen() { return !!D.pen; } };
+  g.Daub.design = { init, show, refresh, frame, fit, key, setTime, syncPlay, get time() { return D.time; }, get pen() { return !!D.pen; } };
 })(window);
