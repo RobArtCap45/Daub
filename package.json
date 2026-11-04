@@ -1,0 +1,56 @@
+{
+  "name": "loom",
+  "productName": "Loom",
+  "version": "0.1.0",
+  "description": "An open-source studio for designers and creative coders: vector design, node-based generative art, a text language and Processing-style code, in one canvas.",
+  "homepage": "https://github.com/RobArtCap45/Loom",
+  "bugs": "https://github.com/RobArtCap45/Loom/issues",
+  "repository": { "type": "git", "url": "git+https://github.com/RobArtCap45/Loom.git" },
+  "license": "CC0-1.0",
+  "author": "RobArtCap45",
+  "private": true,
+  "main": "desktop/main.js",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "start": "electron .",
+    "web": "node scripts/serve.js",
+    "test": "node scripts/check-syntax.js && node tests/engine.test.js && node tests/script.test.js",
+    "docs": "node scripts/gen-docs.js",
+    "build:site": "node scripts/build-site.js",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^45.2.2",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "io.github.robartcap45.loom",
+    "productName": "Loom",
+    "copyright": "Loom contributors. Released under CC0.",
+    "directories": { "output": "dist", "buildResources": "desktop/build" },
+    "files": ["desktop/**/*", "app/**/*", "package.json"],
+    "publish": [{ "provider": "github", "owner": "RobArtCap45", "repo": "Loom", "releaseType": "draft" }],
+    "mac": {
+      "category": "public.app-category.graphics-design",
+      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }, { "target": "zip", "arch": ["arm64", "x64"] }],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "artifactName": "Loom-${version}-mac-${arch}.${ext}"
+    },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "portable", "arch": ["x64"] }],
+      "artifactName": "Loom-${version}-win-${arch}.${ext}"
+    },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "artifactName": "Loom-Setup-${version}-${arch}.${ext}" },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Graphics",
+      "maintainer": "Loom contributors",
+      "artifactName": "Loom-${version}-linux-${arch}.${ext}"
+    }
+  }
+}
