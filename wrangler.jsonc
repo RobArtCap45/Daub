@@ -1,0 +1,9 @@
+{
+  // Cloudflare Workers static assets: serves the built site (landing page at /, web app at /app/).
+  // Build first with `node scripts/build-site.js`, then `npx wrangler deploy`.
+  "name": "daub",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./_site"
+  }
+}
