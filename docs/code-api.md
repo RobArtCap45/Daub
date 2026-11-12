@@ -24,6 +24,38 @@ function draw() {
 - **Vectors:** `createVector(x, y)` or `new PVector(x, y)`, with `add sub mult div mag normalize setMag limit dist dot heading rotate lerp copy`, and static `PVector.add/sub/mult/div/dist/fromAngle/random2D`.
 - **Time and input:** `frameCount frameRate noLoop loop redraw millis hour minute second day month year`, `mouseX mouseY pmouseX pmouseY mouseIsPressed mouseButton`, and the event functions `mousePressed mouseReleased mouseClicked mouseMoved mouseDragged keyPressed keyReleased keyTyped` with `key keyCode keyIsPressed`. **Click the canvas to give the sketch the keyboard.**
 
+## Bring in Processing code
+
+You can paste real Processing (Java) code. Daub converts it to JavaScript when you paste it, press Run, open the Nodes view, or click **Convert Processing code**. **Undo conversion** puts the original back.
+
+It handles typed variables and arrays (`int[][] grid = new int[w][h];`), functions with types, classes with fields and constructors, casts like `(int) x`, `ArrayList` and `HashMap`, `for (Ball b : balls)`, `#ff8800` colors, `1.5f`, generics, and `size(w, h)` (the canvas takes that size). Comments and layout stay.
+
+Things to know:
+- Java divides whole numbers as whole numbers. Daub keeps that for `int` variables, `int` returns and `(int)` casts, but `float f = 7 / 2;` gives 3.5 (Java gives 3.0).
+- Not supported yet: 3D (`P3D`, `box`, `sphere`, lights, camera), `createGraphics`, files (`loadStrings`, `loadTable`, …), the canvas's own `pixels[]` (`loadPixels()` on the canvas), `tint`, and libraries (sound, video, serial). The converter lists what it found.
+- `static` members of a class become ordinary members; inner classes and interfaces are left as they are.
+
+Examples → **Processing (Java) sketches** has two to start from.
+
+## Make nodes (Code → Nodes tab)
+
+**Make nodes…** turns the sketch into the Nodes tab's own nodes (Grid, Ring, Copy to Points, Style …) in a *new* project, so your sketch is not replaced.
+
+It runs the sketch once (frame 1, mouse in the middle), then matches what was drawn to nodes:
+
+| What the sketch drew | Becomes |
+| --- | --- |
+| a double loop of the same shape on a lattice | Grid → Copy to Points |
+| a loop around a circle | Ring → Copy to Points |
+| a lattice or ring that is off-center | plus Move Points |
+| a size, rotation or color that follows position or counter | Attribute → Remap, wired into Copy / Style |
+| shapes whose width and height change independently | a list of shapes moved with Transform |
+| `line`, `triangle`, `quad`, `beginShape`, `bezier` | Line, Draw, Draw, Draw, Curve |
+| `random()` places | Scatter (similar, not identical) |
+| `background()` | the Output color |
+
+Not converted: text, images, `arc`, animation and the mouse (the nodes show the first frame), and colors set in RGB that change from shape to shape (Style uses hue, saturation and brightness, so a Random node stands in). The notes after converting say which of these applied.
+
 ## Images and fonts
 
 ```js
@@ -70,7 +102,7 @@ Click **Nodes** above the editor to see the same sketch as a graph. Every statem
 
 ## Differences from Processing
 
-- The canvas is always 600 × 600: `size()` and `createCanvas()` are ignored, and `width` / `height` are 600.
+- The canvas is 600 × 600 unless the sketch calls `size(w, h)` (or `createCanvas(w, h)`) with literal numbers, which sets the size (50 to 3000).
 
 - It is JavaScript: `let` / `const` instead of types, `Math.floor` or `floor`, arrays are `[]`.
 - Colors are CSS strings internally, so `color(...)` gives a string you can pass to `fill`, `stroke`, `lerpColor`.

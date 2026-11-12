@@ -664,6 +664,6 @@
     return { nodes: total, raw };
   }
 
-  D.codegraph = { compile, generate, decompile: generate, getDef, entries, defaults, newArg, duplicate, layout, nodeTitle, stats, API, _tokens: (s) => prepare(s).filter((t) => t.t !== 'eof').map((t) => t.v) };
+  D.codegraph = { tokenize, parse: (src) => parseStatements(Parser(String(src)), false), compile, generate, decompile: generate, getDef, entries, defaults, newArg, duplicate, layout, nodeTitle, stats, API, _tokens: (s) => prepare(s).filter((t) => t.t !== 'eof').map((t) => t.v) };
   if (D.PORT_COLORS) Object.assign(D.PORT_COLORS, { flow: '#e8483a', text: '#9a9a94', note: '#9a9a94', code: '#9a9a94' });
 })(window);

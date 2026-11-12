@@ -1382,4 +1382,111 @@ function pickGlyph(t, x, y) {
 }
 `],
   ]);
+  // Sketches written in real Processing (Java). Opening one converts it to Daub's JavaScript (see src/pde.js).
+  ex.pde = [
+    { name: 'ASCII Dither (Processing)', code: `// A picture turned into colored blocks of text (Processing, Java mode).
+// Daub converts this to JavaScript when you open it. loadImage() gives a demo picture:
+// use "Load image…" above the editor to try your own.
+PImage img;
+int COLS = 60;                                   // grid size. try 30, 60, 120
+float CELL;
+color[] TONE = { #8a8f94, #e8554e, #4caf3a };    // block colors, dark -> light
+String[] POOL = { "8X@#", "*+?%", ":;,." };      // glyphs for each tone
+int[][] BAYER = {{0,8,2,10},{12,4,14,6},{3,11,1,9},{15,7,13,5}};
+
+void setup() {
+  size(900, 1125);
+  img = loadImage("picture.jpg");
+  img.resize(COLS, 0);
+  img.loadPixels();
+  CELL = width / (float) COLS;
+  textFont(createFont("Courier", CELL, true));
+  textAlign(CENTER, CENTER);
+  noLoop();
+}
+
+void draw() {
+  background(0);
+  noStroke();
+  for (int y = 0; y < img.height; y++) {
+    for (int x = 0; x < img.width; x++) {
+      color c = img.pixels[y * img.width + x];
+      if (alpha(c) < 128 || brightness(c) < 20) continue;   // empty cell stays black
+
+      int t = pickTone(brightness(c) / 255.0, x, y);
+      char g = pickGlyph(t, x, y);
+
+      fill(TONE[t]);
+      rect(x * CELL, y * CELL, CELL, CELL);
+      fill(0);
+      text(g, (x + 0.5) * CELL, (y + 0.5) * CELL);
+    }
+  }
+}
+
+int pickTone(float b, int x, int y) {            // 0 = darkest tone
+  float v = (1 - b) * (TONE.length - 1);         // dark pixels -> low index
+  float thr = (BAYER[y % 4][x % 4] + 0.5) / 16;
+  int base = floor(v);
+  return constrain(base + ((v - base) > thr ? 1 : 0), 0, TONE.length - 1);
+}
+
+char pickGlyph(int t, int x, int y) {
+  String pool = POOL[t];
+  int h = abs((x * 73856093) ^ (y * 19349663));  // repeatable "random" number
+  return pool.charAt(h % pool.length());
+}
+` },
+    { name: 'Bouncing Balls (Processing)', code: `// Balls that bounce off the walls. A class, an ArrayList and a for-each loop, as in Processing.
+ArrayList<Ball> balls = new ArrayList<Ball>();
+
+class Ball {
+  float x, y;
+  float vx, vy;
+  float r;
+  color c;
+
+  Ball(float x, float y) {
+    this.x = x;
+    this.y = y;
+    vx = random(-3, 3);
+    vy = random(-3, 3);
+    r = random(10, 28);
+    c = color(random(120, 255), random(60, 200), random(60, 160));
+  }
+
+  void update() {
+    x += vx;
+    y += vy;
+    if (x < r || x > width - r) vx *= -1;
+    if (y < r || y > height - r) vy *= -1;
+  }
+
+  void show() {
+    fill(c);
+    noStroke();
+    ellipse(x, y, r * 2, r * 2);
+  }
+}
+
+void setup() {
+  size(600, 600);
+  for (int i = 0; i < 24; i++) {
+    balls.add(new Ball(random(width), random(height)));
+  }
+}
+
+void draw() {
+  background(20);
+  for (Ball b : balls) {
+    b.update();
+    b.show();
+  }
+}
+
+void mousePressed() {
+  balls.add(new Ball(mouseX, mouseY));
+}
+` },
+  ];
 })(window);

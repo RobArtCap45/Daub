@@ -88,6 +88,8 @@
   <section id="codeView" hidden>
     <div class="cbar">
       <div class="seg" role="group" aria-label="Show the code as"><button id="cvText" class="on">Text</button><button id="cvNodes" title="Edit this same code as nodes">Nodes</button></div>
+      <button id="convJava" class="primary" hidden title="This looks like Processing (Java). Translate it to Daub's JavaScript.">Convert Processing code</button><button id="undoConv" hidden title="Put the original Processing code back">Undo conversion</button>
+      <button id="toGen" title="Turn this sketch into the Nodes tab's nodes (Grid, Ring, Copy to Points, Style …) in a new project">Make nodes…</button>
       <button id="loadImg" title="Use your own picture for loadImage() in a sketch">Load image…</button><button id="clearImg" title="Go back to the demo picture" hidden>✕</button>
       <input type="file" id="imgFile" accept="image/*" hidden>
       <span id="cMsg"></span><span class="spacer"></span>
@@ -113,6 +115,7 @@
 </div>
 <div id="add" hidden><input id="addq" placeholder="Search nodes…" autocomplete="off"><div id="addlist"></div></div>
 <div id="toast" hidden></div>
+<div id="notice" hidden><b id="noticeTitle"></b><ul id="noticeList"></ul><button id="noticeOk" class="primary">Got it</button></div>
 <div id="ask" hidden>
   <div class="askbox">
     <h3 id="askTitle"></h3>
@@ -124,6 +127,8 @@
 <script src="src/engine.js"></script>
 <script src="src/sketch.js"></script>
 <script src="src/codegraph.js"></script>
+<script src="src/pde.js"></script>
+<script src="src/togen.js"></script>
 <script src="src/editor.js"></script>
 <script src="src/codeeditor.js"></script>
 <script src="src/draw.js"></script>

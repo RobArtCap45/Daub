@@ -19,7 +19,7 @@ Daub puts four ways of making things in one window, all editing the same sketch:
 | **Design** | A vector editor with a bezier pen, shapes, layers and a keyframe timeline. Export PNG, SVG and video. |
 | **Nodes** | Build generative art by wiring nodes: grids, noise, copies, bezier paths, union/subtract, align, distribute, your own custom nodes. |
 | **Script** | The same node graph written as text, in a small language that reads like a recipe. Edit either side. |
-| **Code** | Processing-style JavaScript with mouse and keyboard events, images, and more than 60 examples. Switch to **Nodes** to edit the same code as a graph. |
+| **Code** | Processing-style JavaScript with mouse and keyboard events, images, and more than 60 examples. Paste real Processing (Java) code and it is converted. Switch to **Nodes** to edit the same code as a graph, or use **Make nodes…** to turn a sketch into the Nodes tab's nodes. |
 
 No account, no cloud, no build step for the app itself. A sketch is one `.daub.json` file.
 

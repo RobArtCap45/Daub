@@ -8,6 +8,9 @@
   const { hsb, noise3, mulberry32 } = g.Daub;
   const TAU = Math.PI * 2;
 
+  // Java's String.equals(), for sketches brought over from Processing
+  if (!String.prototype.equals) Object.defineProperty(String.prototype, 'equals', { value(o) { return this.valueOf() === o; }, configurable: true });
+
   g.Daub.createSketch = function (c, W, H, dpr, code, assets = {}) {
     let rng = mulberry32(1), noiseOff = 0, spare = null;
     let looping = true, redrawOnce = false, fps = 60, t0 = performance.now();
@@ -154,7 +157,7 @@
       key: '', keyCode: 0, keyIsPressed: false, mouseButton: 0,
 
       // --- environment / structure
-      size() {}, createCanvas() {}, smooth() {}, noSmooth() {}, pixelDensity() {},
+      size() {}, createCanvas() {}, fullScreen() {}, smooth() {}, noSmooth() {}, pixelDensity() {},
       frameRate: (f) => { if (f) fps = Math.max(1, f); return fps; },
       noLoop: () => { looping = false; }, loop: () => { looping = true; }, redraw: () => { redrawOnce = true; },
       millis: () => performance.now() - t0,
@@ -263,7 +266,8 @@
       createImage: (w, h) => new Img(newCanvas(w, h)),
       image: (im, x, y, w, h) => { c.drawImage(im.cv, x, y, w ?? im.width, h ?? im.height); },
       set: (x, y, ...a) => { c.save(); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.fillStyle = col(a); c.fillRect(Math.floor(x), Math.floor(y), 1, 1); c.restore(); },
-      int: (v) => Math.trunc(v), float: (v) => parseFloat(v), str: (v) => String(v),
+      int: (v) => (typeof v === 'string' && v.length === 1 && isNaN(v) ? v.charCodeAt(0) : Math.trunc(v)), float: (v) => parseFloat(v), str: (v) => String(v),
+      char: (v) => (typeof v === 'number' ? String.fromCharCode(v) : v), boolean: (v) => !!v && v !== 'false',
       nf: (v, left = 0, right = 0) => { const s = Math.abs(v).toFixed(right), [i, d] = s.split('.'); return (v < 0 ? '-' : '') + i.padStart(left, '0') + (d ? '.' + d : ''); },
       cursor() {}, noCursor() {},
     };

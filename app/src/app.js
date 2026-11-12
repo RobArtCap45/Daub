@@ -1,10 +1,15 @@
 /* Daub app: tabs, render loop, examples, undo/redo, import/export, autosave. */
 (function () {
   'use strict';
-  const { NODES, Editor, CodeEditor, codegraph: cg, examples, validProject } = window.Daub;
+  const { NODES, Editor, CodeEditor, codegraph: cg, pde, togen, examples, validProject } = window.Daub;
   const $ = (s) => document.querySelector(s);
-  const W = 600, H = 600, dpr = Math.min(2, window.devicePixelRatio || 1);
+  const DPR = Math.min(2, window.devicePixelRatio || 1);
+  let W = 600, H = 600, dpr = DPR; // the canvas is 600 x 600, except in the Code tab when the sketch calls size(w, h)
   const cv = $('#cv'); cv.width = W * dpr; cv.height = H * dpr;
+  function setCanvasSize(w, h) {
+    if (w === W && h === H) return;
+    W = w; H = h; dpr = w * h > 1.6e6 ? 1 : DPR; cv.width = W * dpr; cv.height = H * dpr; cv.style.setProperty('--ar', W / H);
+  }
   const c = cv.getContext('2d');
   const clone = (o) => JSON.parse(JSON.stringify(o));
   const DEFAULT_CODE = examples.code[0].code;
@@ -146,6 +151,7 @@
   }
   function setCodeView(v) {
     let failed = false;
+    if (v === 'nodes') convertJava();
     if (v === 'nodes' && cgText !== $('#code').value && !loadCodeGraph($('#code').value)) { v = 'text'; failed = true; }
     codeView = v; document.body.dataset.cview = v;
     $('#cvText').classList.toggle('on', v === 'text'); $('#cvNodes').classList.toggle('on', v === 'nodes');
@@ -213,6 +219,7 @@
     $('#code').value = snap.code || DEFAULT_CODE; cgText = null; pendingCodeGraph = snap.codeGraph || null;
     const v = snap.view || {};
     codeView = v.codeView === 'nodes' ? 'nodes' : 'text'; if (codeView === 'text') setCodeView('text');
+    preConvert = null; undoConv.hidden = true; checkJava();
     if (quiet) return;
     playing = true;
     setMode(v.mode || (snap.graph.design && snap.graph.design.shapes && snap.graph.design.shapes.length && snap.graph.nodes.length <= 1 ? 'design' : 'nodes'));
@@ -259,6 +266,45 @@
   pn.addEventListener('focus', () => pn.select());
   pn.addEventListener('blur', () => { const q = projects.find((x) => x.id === currentId); if (q) { q.name = pn.value.trim() || 'Untitled'; lsSet(PK, projects); } renderProjectBar(); });
 
+  // ---- bringing in Processing (Java) code, and turning a sketch into the Nodes tab's nodes
+  const noticeEl = $('#notice');
+  function showNotice(title, lines) {
+    if (!lines || !lines.length) { noticeEl.hidden = true; return; }
+    $('#noticeTitle').textContent = title; const ul = $('#noticeList'); ul.innerHTML = '';
+    lines.forEach((l) => { const li = document.createElement('li'); li.textContent = l; ul.appendChild(li); });
+    noticeEl.hidden = false;
+  }
+  $('#noticeOk').onclick = () => { noticeEl.hidden = true; };
+  let preConvert = null;
+  const convJava = $('#convJava'), undoConv = $('#undoConv');
+  const checkJava = () => { convJava.hidden = !pde.looksLikeJava($('#code').value); };
+  function convertJava() { // Processing (Java) -> Daub JavaScript, in place. Returns true if it converted something.
+    const text = $('#code').value;
+    if (!pde.looksLikeJava(text)) return false;
+    let r; try { r = pde.convert(text); } catch (e) { toast('Could not convert this Processing code: ' + e.message, 5000); return false; }
+    if (!r.changed) return false;
+    preConvert = text; $('#code').value = r.code; cgText = null; pendingCodeGraph = null; autosave();
+    convJava.hidden = true; undoConv.hidden = false;
+    toast('Converted from Processing (Java) to Daub JavaScript.', 3200);
+    showNotice('Converted from Processing', r.notes);
+    return true;
+  }
+  convJava.onclick = () => { if (convertJava() && mode === 'code') { if (codeView === 'nodes') setCodeView('nodes'); runSketch(); } };
+  undoConv.onclick = () => { if (preConvert === null) return; $('#code').value = preConvert; preConvert = null; cgText = null; pendingCodeGraph = null; undoConv.hidden = true; autosave(); checkJava(); if (codeView === 'nodes') setCodeView('nodes'); if (mode === 'code') runSketch(); };
+  let javaTimer; $('#code').addEventListener('input', () => { clearTimeout(javaTimer); javaTimer = setTimeout(checkJava, 300); });
+  $('#code').addEventListener('paste', () => { const before = $('#code').value.length; setTimeout(() => { if ($('#code').value.length - before > 30 && convertJava() && mode === 'code') runSketch(); else checkJava(); }, 0); });
+
+  // the sketch -> generator nodes, in a new project so nothing you have is replaced
+  $('#toGen').onclick = () => {
+    convertJava();
+    let r; try { r = togen.toNodes($('#code').value); } catch (e) { toast('Could not make nodes from this sketch: ' + e.message, 5000); return; }
+    if (!r.stats.shapes) { showNotice('Nothing to convert', r.notes); return; }
+    const snap = { version: 3, graph: { nodes: r.nodes, edges: r.edges, subs: {} }, code: $('#code').value, view: { mode: 'nodes', codeView: 'text' } };
+    startProject(projName() + ' · nodes', snap, false);
+    const bits = [`${r.nodes.length} nodes from ${r.stats.shapes} shapes.`, ...r.notes];
+    showNotice('Sketch converted to nodes', bits);
+  };
+
   // ---- rendering
   function renderNodes() {
     try {
@@ -272,6 +318,8 @@
   }
   function runSketch() {
     try {
+      const sz = /\b(?:size|createCanvas)\s*\(\s*(\d+)\s*,\s*(\d+)/.exec($('#code').value), clampPx = (v) => Math.max(50, Math.min(3000, +v));
+      setCanvasSize(sz ? clampPx(sz[1]) : 600, sz ? clampPx(sz[2]) : 600);
       c.setTransform(dpr, 0, 0, dpr, 0, 0);
       c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
       sketch = window.Daub.createSketch(c, W, H, dpr, $('#code').value, { image: codeImage });
@@ -355,6 +403,7 @@
     $('#nodesView').hidden = m !== 'nodes'; $('#codeView').hidden = m !== 'code'; $('#designView').hidden = m !== 'design'; $('#scriptView').hidden = m !== 'script';
     if (m === 'script') enterScript();
     document.querySelector('main').classList.toggle('wide', m === 'design');
+    if (m !== 'code') setCanvasSize(600, 600);
     renderProjectBar();
     if (m === 'nodes') editor.refresh(); // the graph may have changed while this tab was hidden (measure after the layout settles)
     if (m === 'design') playing = false; // opens paused so editing is steady; the ▶ button plays
@@ -368,6 +417,8 @@
   (examples.designs || []).forEach((ex) => item(ex.name, () => { startProject(ex.name); const p = clone(ex.graph); loadProject(p); setMode('design'); playing = true; window.Daub.design.syncPlay(); }));
   heading('Node sketches');
   examples.nodes.forEach((ex) => item(ex.name, () => { startProject(ex.name); loadProject(clone(ex.graph)); setMode('nodes'); playing = true; }));
+  heading('Processing (Java) sketches');
+  (examples.pde || []).forEach((ex) => item(ex.name, () => { startProject(ex.name); $('#code').value = ex.code; cgText = null; pendingCodeGraph = null; convertJava(); autosave(); playing = true; setMode('code'); }));
   heading('Script sketches');
   (examples.scripts || []).forEach((ex) => item(ex.name, () => { startProject(ex.name); sEl.value = ex.text; applyScript(); playing = true; setMode('script'); }));
   let lastCat = null;
@@ -380,7 +431,7 @@
   document.addEventListener('click', (e) => document.querySelectorAll('details.menu[open]').forEach((d) => { if (!d.contains(e.target) || e.target.closest('.pop button')) d.open = false; }));
 
   // ---- controls
-  const run = () => { playing = true; if (mode === 'code') runSketch(); window.Daub.design.syncPlay(); };
+  const run = () => { playing = true; if (mode === 'code') { convertJava(); runSketch(); } window.Daub.design.syncPlay(); };
   $('#run').onclick = run; $('#stop').onclick = () => { playing = false; window.Daub.design.syncPlay(); };
   $('#fit').onclick = () => (mode === 'design' ? window.Daub.design.fit() : (activeEd() || editor).fit());
   $('#undo').onclick = () => restore(-1); $('#redo').onclick = () => restore(1);
