@@ -18,6 +18,7 @@
 <body>
 <header>
   <span class="brand">Daub</span>
+  <div id="proj"><input id="projName" spellcheck="false" aria-label="Project name" title="Project name (click to rename)"><span id="projDot" title="Saved in this browser"></span><span id="projView"></span></div>
   <div class="group">
     <button id="run" title="Run (Space)">▶</button>
     <button id="stop" title="Stop (Space)">■</button>
@@ -29,6 +30,7 @@
     <button id="undo" title="Undo (Ctrl+Z)">↶</button>
     <button id="redo" title="Redo (Ctrl+Shift+Z)">↷</button>
   </div>
+  <details class="menu" id="projMenu"><summary>Projects</summary><div class="pop" id="projList"></div></details>
   <details class="menu" id="exMenu"><summary>Examples</summary><div class="pop" id="exList"></div></details>
   <details class="menu"><summary>File</summary>
     <div class="pop">
@@ -94,6 +96,7 @@
     <div id="codeNodes" hidden>
       <div id="cgraph"></div>
       <div id="cCrumbs" hidden></div>
+      <div id="cBar" hidden></div>
       <div id="cHint">Each node is one line of your code, and the wires say what runs next · double-click to add a node · drag a number’s label to change it · Open a loop or function to edit inside</div>
     </div>
   </section>

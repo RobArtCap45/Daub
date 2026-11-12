@@ -48,6 +48,21 @@
       this.sel = new Set([id]); this.rebuild(); this.changed();
     }
 
+    // copy the selected statements (and whatever is inside them), each wired in right after its original
+    duplicateSelected() {
+      const gph = this.graph, reach = this.reachable(), made = [];
+      for (const n of this.selectedNodes()) {
+        if (!reach.has(n.id) || n.type === 'start') continue;
+        const c = cg.duplicate(this.project, gph, n.id, () => this.newId());
+        if (!c) continue;
+        const link = gph.edges.find((e) => e.from === n.id && e.input === 'flow');
+        if (link) { const old = link.to; link.to = c.id; gph.edges.push({ from: c.id, to: old, input: 'flow' }); } else gph.edges.push({ from: n.id, to: c.id, input: 'flow' });
+        made.push(c.id);
+      }
+      if (!made.length) return;
+      this.sel = new Set(made); this.rebuild(); this.changed();
+    }
+
     // deleting a statement closes the gap in the wires; deleting a container deletes what is inside it
     removeNodes(ids) {
       const gph = this.graph, set = new Set(ids);

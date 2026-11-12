@@ -9,6 +9,7 @@
   const clone = (o) => JSON.parse(JSON.stringify(o));
   const DEFAULT_CODE = examples.code[0].code;
 
+  let codeView = 'text'; // 'text' | 'nodes': how the Code tab shows the sketch
   let pendingCodeGraph = null; // the saved layout of the code's nodes, used if it still matches the code
   let acc = 0, mode = 'nodes', playing = true, time = 0, last = performance.now(), sketch = null, lastScene = null;
   let graph = clone(examples.nodes[0].graph);
@@ -17,16 +18,39 @@
     if (!localStorage.getItem('daub.v1') && localStorage.getItem('loom.v1')) localStorage.setItem('daub.v1', localStorage.getItem('loom.v1'));
     if (!localStorage.getItem('daub.seen') && localStorage.getItem('loom.seen')) localStorage.setItem('daub.seen', '1');
   } catch (e) { /* ignore */ }
+  // ---- projects, kept in this browser: an index, the current id, and one snapshot per project
+  const PK = 'daub.projects', CK = 'daub.cur', SK = (id) => 'daub.p.' + id;
+  const lsGet = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+  const newPid = () => 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+  let projects = lsGet(PK) || [], currentId = null, startView = null;
   try {
-    const saved = JSON.parse(localStorage.getItem('daub.v1') || 'null');
-    if (saved && saved.graph && validProject(saved.graph)) { graph = saved.graph; $('#code').value = saved.code || DEFAULT_CODE; pendingCodeGraph = saved.codeGraph || null; }
+    let saved = null;
+    if (projects.length) {
+      const ent = projects.find((q) => q.id === localStorage.getItem(CK)) || projects[0];
+      currentId = ent.id; saved = lsGet(SK(currentId));
+    } else { // first run with projects: the one sketch this browser had becomes the first project
+      saved = lsGet('daub.v1'); currentId = newPid(); projects = [{ id: currentId, name: saved ? 'My sketch' : 'Untitled', updated: Date.now() }];
+    }
+    if (saved && saved.graph && validProject(saved.graph)) { graph = saved.graph; $('#code').value = saved.code || DEFAULT_CODE; pendingCodeGraph = saved.codeGraph || null; startView = saved.view || null; }
   } catch (e) { /* ignore */ }
+  if (!currentId) { currentId = newPid(); projects = [{ id: currentId, name: 'Untitled', updated: Date.now() }]; }
 
   const status = (msg, err) => { const s = $('#status'); s.textContent = err ? '⚠ ' + msg : msg; s.classList.toggle('err', !!err); };
   let toastTimer;
   const toast = (msg, ms = 2600) => { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); if (ms) toastTimer = setTimeout(() => { t.hidden = true; }, ms); };
-  let saveTimer;
-  const autosave = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem('daub.v1', JSON.stringify({ graph: editor.project, code: $('#code').value, codeGraph: savedCodeGraph() })); } catch (e) { /* ignore */ } }, 400); };
+  let saveTimer, dirty = false;
+  const snapshot = () => ({ version: 3, graph: editor.project, code: $('#code').value, codeGraph: savedCodeGraph(), view: { mode, codeView } });
+  function saveNow() {
+    clearTimeout(saveTimer);
+    const ent = projects.find((q) => q.id === currentId); if (!ent) return;
+    if (!lsSet(SK(currentId), snapshot())) { toast('Could not save: this browser\u2019s storage is full. Use File \u2192 Save to keep a copy.', 6000); return; }
+    ent.updated = Date.now(); lsSet(PK, projects);
+    try { localStorage.setItem(CK, currentId); localStorage.removeItem('daub.v1'); } catch (e) { /* ignore */ }
+    dirty = false; renderProjectBar();
+  }
+  const autosave = () => { dirty = true; renderProjectBar(); clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 400); };
+  window.addEventListener('pagehide', () => { if (dirty) saveNow(); });
 
   // ---- undo / redo (snapshots of the node graph)
   let hist = [], hi = 0, histTimer;
@@ -90,7 +114,7 @@
 
   // ---- Code as nodes: the Code tab can show the same program as a graph of statements (see codegraph.js).
   // The text is the file; the graph is another view of it. Edit either one and the other follows when you switch.
-  let codeView = 'text', cgText = null, codeImage = null, runTimer;
+  let cgText = null, codeImage = null, runTimer;
   const cMsg = $('#cMsg');
   const sayCode = (msg, err) => { cMsg.textContent = msg || ''; cMsg.className = err ? 'err' : ''; };
   const countMsg = () => { const st = cg.stats(cgEditor.project); return `${st.nodes} node${st.nodes === 1 ? '' : 's'}${st.raw ? ` · ${st.raw} kept as raw code` : ''}`; };
@@ -106,7 +130,7 @@
   function cgChanged() {
     try {
       const text = cg.generate(cgEditor.project);
-      $('#code').value = text; cgText = text; sayCode(countMsg()); autosave();
+      $('#code').value = text; cgText = text; cgEditor.hsb = /colorMode\s*\(\s*HSB/.test(text); sayCode(countMsg()); autosave();
       clearTimeout(runTimer); runTimer = setTimeout(() => { if (mode === 'code') runSketch(); }, 120);
     } catch (e) { sayCode(e.message, true); if (e.nodeId) cgEditor.setSel([e.nodeId]); }
   }
@@ -115,6 +139,7 @@
     try {
       let project = null;
       if (pendingCodeGraph) { try { if (cg.generate(pendingCodeGraph) === text) project = pendingCodeGraph; } catch (e) { /* use the code */ } pendingCodeGraph = null; }
+      cgEditor.hsb = /colorMode\s*\(\s*HSB/.test(text);
       cgEditor.setProject(project || cg.compile(text)); cgText = text; resetCgHistory();
       return true;
     } catch (e) { sayCode((e.line ? `Line ${e.line}: ` : '') + e.message, true); toast('Fix the code first: ' + (e.line ? `line ${e.line}: ` : '') + e.message, 4000); return false; }
@@ -126,7 +151,16 @@
     $('#cvText').classList.toggle('on', v === 'text'); $('#cvNodes').classList.toggle('on', v === 'nodes');
     $('#code').hidden = v === 'nodes'; $('#codeNodes').hidden = v === 'text';
     if (v === 'nodes') { cgEditor.refresh(); sayCode(countMsg()); } else if (!failed) sayCode('');
+    renderProjectBar();
   }
+  cgEditor.onWireDrop = (from, ev) => { cgEditor.setSel([from]); openAdd(ev, cgEditor); }; // drop a wire on empty space to add a node there
+  const cBar = $('#cBar');
+  cgEditor.onSelect = () => {
+    const ids = cgEditor.selectedNodes().filter((n) => n.type !== 'start'); cBar.innerHTML = '';
+    const add = (label, fn) => { const b = document.createElement('button'); b.textContent = label; b.onclick = fn; cBar.appendChild(b); };
+    if (ids.length) { add('Duplicate (Ctrl+D)', () => cgEditor.duplicateSelected()); add('Delete', () => cgEditor.deleteSelected()); }
+    cBar.hidden = !cBar.children.length;
+  };
   $('#cvText').onclick = () => setCodeView('text'); $('#cvNodes').onclick = () => setCodeView('nodes');
   $('#toCode').onclick = () => { setMode('code'); setCodeView('nodes'); };
   const cCrumbs = $('#cCrumbs');
@@ -161,6 +195,69 @@
   $('#clearImg').onclick = () => { codeImage = null; $('#clearImg').hidden = true; if (mode === 'code') runSketch(); };
   $('#preview').addEventListener('dragover', (e) => { if (mode === 'code') e.preventDefault(); });
   $('#preview').addEventListener('drop', (e) => { if (mode !== 'code') return; const f = [...e.dataTransfer.files].find((x) => /^image\//.test(x.type)); if (f) { e.preventDefault(); useImage(f); } });
+
+  // ---- the project bar (name, saved dot, where you are) and the Projects menu
+  const projName = () => { const q = projects.find((x) => x.id === currentId); return q ? q.name : ''; };
+  function renderProjectBar() {
+    const nm = $('#projName'), tabs = { design: 'Design', nodes: 'Nodes', script: 'Script', code: 'Code' };
+    if (document.activeElement !== nm) nm.value = projName();
+    $('#projDot').className = dirty ? 'dirty' : ''; $('#projDot').title = dirty ? 'Saving…' : 'Saved in this browser';
+    $('#projView').textContent = mode === 'code' ? `Code · ${codeView === 'nodes' ? 'Nodes' : 'Text'}` : tabs[mode] || '';
+    document.title = `${projName() || 'Untitled'} – Daub`;
+  }
+  const BLANK = () => ({ graph: { nodes: [{ id: 'out', type: 'output', x: 0, y: 0, params: {} }], edges: [] }, code: 'function setup() {\n}\n\nfunction draw() {\n  background(20);\n}\n', view: { mode: 'nodes', codeView: 'text' } });
+  // put a snapshot on screen (quiet: stay on the current tab)
+  function applySnapshot(d, quiet) {
+    const ok = d && d.graph && validProject(d.graph), snap = ok ? d : BLANK();
+    loadProject(clone(snap.graph));
+    $('#code').value = snap.code || DEFAULT_CODE; cgText = null; pendingCodeGraph = snap.codeGraph || null;
+    const v = snap.view || {};
+    codeView = v.codeView === 'nodes' ? 'nodes' : 'text'; if (codeView === 'text') setCodeView('text');
+    if (quiet) return;
+    playing = true;
+    setMode(v.mode || (snap.graph.design && snap.graph.design.shapes && snap.graph.design.shapes.length && snap.graph.nodes.length <= 1 ? 'design' : 'nodes'));
+  }
+  function startProject(name, snap, quiet = true) { // save this one, make a new one
+    saveNow();
+    currentId = newPid(); projects.push({ id: currentId, name: name || 'Untitled', updated: Date.now() });
+    applySnapshot(snap, quiet); saveNow();
+  }
+  const newProject = (name, snap) => startProject(name || 'Untitled', snap, false);
+  function openProject(id) {
+    if (id === currentId) return;
+    saveNow(); currentId = id; applySnapshot(lsGet(SK(id)), false); saveNow();
+  }
+  function deleteProject() {
+    const gone = currentId;
+    try { localStorage.removeItem(SK(gone)); } catch (e) { /* ignore */ }
+    projects = projects.filter((q) => q.id !== gone);
+    if (!projects.length) { currentId = newPid(); projects = [{ id: currentId, name: 'Untitled', updated: Date.now() }]; applySnapshot(null, false); }
+    else { const next = [...projects].sort((a, b) => b.updated - a.updated)[0]; currentId = next.id; applySnapshot(lsGet(SK(next.id)), false); }
+    lsSet(PK, projects); saveNow(); toast('Project deleted');
+  }
+  const ago = (t) => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : new Date(t).toLocaleDateString(); };
+  function renderProjectList() {
+    const list = $('#projList'); list.innerHTML = '';
+    const add = (label, fn, cls) => { const b = document.createElement('button'); b.textContent = label; if (cls) b.className = cls; b.onclick = fn; list.appendChild(b); return b; };
+    add('＋ New project', () => { newProject(); const n = $('#projName'); n.focus(); n.select(); });
+    add('Duplicate this project', () => { saveNow(); startProject(projName() + ' copy', clone(snapshot()), false); toast('Duplicated'); });
+    const del = add('Delete this project…', (e) => {
+      e.stopPropagation();
+      if (del.dataset.sure) { del.dataset.sure = ''; document.querySelector('#projMenu').open = false; deleteProject(); return; }
+      del.dataset.sure = '1'; del.textContent = `Click again to delete “${projName()}”`; del.classList.add('warn');
+    }, '');
+    list.appendChild(document.createElement('hr'));
+    const h = document.createElement('h5'); h.textContent = 'Your projects'; list.appendChild(h);
+    [...projects].sort((a, b) => b.updated - a.updated).forEach((q) => {
+      const b = add(q.name, () => openProject(q.id), q.id === currentId ? 'cur' : '');
+      const sm = document.createElement('small'); sm.textContent = (q.id === currentId ? 'open now · ' : '') + ago(q.updated); b.appendChild(sm);
+    });
+  }
+  $('#projMenu').addEventListener('toggle', () => { if ($('#projMenu').open) { saveNow(); renderProjectList(); } });
+  const pn = $('#projName');
+  pn.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') pn.blur(); else if (e.key === 'Escape') { pn.value = projName(); pn.blur(); } });
+  pn.addEventListener('focus', () => pn.select());
+  pn.addEventListener('blur', () => { const q = projects.find((x) => x.id === currentId); if (q) { q.name = pn.value.trim() || 'Untitled'; lsSet(PK, projects); } renderProjectBar(); });
 
   // ---- rendering
   function renderNodes() {
@@ -258,6 +355,7 @@
     $('#nodesView').hidden = m !== 'nodes'; $('#codeView').hidden = m !== 'code'; $('#designView').hidden = m !== 'design'; $('#scriptView').hidden = m !== 'script';
     if (m === 'script') enterScript();
     document.querySelector('main').classList.toggle('wide', m === 'design');
+    renderProjectBar();
     if (m === 'nodes') editor.refresh(); // the graph may have changed while this tab was hidden (measure after the layout settles)
     if (m === 'design') playing = false; // opens paused so editing is steady; the ▶ button plays
     if (m === 'code') { if (codeView === 'nodes') setCodeView('nodes'); runSketch(); } else if (m === 'design') { window.Daub.design.show(); window.Daub.design.syncPlay(); } else renderNodes();
@@ -267,15 +365,15 @@
   const heading = (t) => { const h = document.createElement('h5'); h.textContent = t; exList.appendChild(h); };
   const item = (t, fn) => { const b = document.createElement('button'); b.textContent = t; b.onclick = fn; exList.appendChild(b); };
   heading('Design sketches');
-  (examples.designs || []).forEach((ex) => item(ex.name, () => { const p = clone(ex.graph); loadProject(p); setMode('design'); playing = true; window.Daub.design.syncPlay(); }));
+  (examples.designs || []).forEach((ex) => item(ex.name, () => { startProject(ex.name); const p = clone(ex.graph); loadProject(p); setMode('design'); playing = true; window.Daub.design.syncPlay(); }));
   heading('Node sketches');
-  examples.nodes.forEach((ex) => item(ex.name, () => { loadProject(clone(ex.graph)); setMode('nodes'); playing = true; }));
+  examples.nodes.forEach((ex) => item(ex.name, () => { startProject(ex.name); loadProject(clone(ex.graph)); setMode('nodes'); playing = true; }));
   heading('Script sketches');
-  (examples.scripts || []).forEach((ex) => item(ex.name, () => { sEl.value = ex.text; applyScript(); playing = true; setMode('script'); }));
+  (examples.scripts || []).forEach((ex) => item(ex.name, () => { startProject(ex.name); sEl.value = ex.text; applyScript(); playing = true; setMode('script'); }));
   let lastCat = null;
   examples.code.forEach((ex) => {
     if (ex.cat !== lastCat) { heading('Code · ' + (ex.cat || 'Sketches')); lastCat = ex.cat; }
-    item(ex.name, () => { $('#code').value = ex.code; cgText = null; pendingCodeGraph = null; autosave(); playing = true; setMode('code'); });
+    item(ex.name, () => { startProject(ex.name); $('#code').value = ex.code; cgText = null; pendingCodeGraph = null; autosave(); playing = true; setMode('code'); });
   });
 
   // close menus when clicking elsewhere or choosing something
@@ -309,6 +407,7 @@
     else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); restore(1); }
     else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'g' && mode === 'nodes') { e.preventDefault(); editor.groupSelected(); }
     else if (typing) return;
+    else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd' && activeEd() === cgEditor) { e.preventDefault(); cgEditor.duplicateSelected(); }
     else if (e.key === 'Escape' && activeEd() && activeEd().stack.length) activeEd().up();
     else if (e.key === 'Enter' && activeEd()) { const ae = activeEd(), n = ae.selectedNodes()[0]; if (n) { if (ae === cgEditor) { if (ae.def(n.type).container) ae.enter(n.id); } else if (n.type.startsWith('sub:')) ae.enter(n.type.slice(4)); } }
     else if ((e.key === 'Delete' || e.key === 'Backspace') && activeEd()) { e.preventDefault(); activeEd().deleteSelected(); }
@@ -381,13 +480,13 @@
     if (mode === 'code' || !lastScene) return toast('SVG export works from the Design and Nodes tabs.');
     download('daub.svg', new Blob([window.Daub.toSVG(lastScene, W, H)], { type: 'image/svg+xml' }));
   };
-  $('#save').onclick = () => download('sketch.daub.json', new Blob([JSON.stringify({ version: 3, graph: editor.project, code: $('#code').value, codeGraph: savedCodeGraph() }, null, 2)], { type: 'application/json' }));
+  $('#save').onclick = () => download((projName() || 'sketch').replace(/[^\w.-]+/g, '-') + '.daub.json', new Blob([JSON.stringify(snapshot(), null, 2)], { type: 'application/json' }));
   $('#open').onclick = () => $('#file').click();
   $('#file').onchange = async (e) => {
     try {
       const d = JSON.parse(await e.target.files[0].text());
       if (!d.graph || !validProject(d.graph)) throw new Error('That file is not a Daub sketch.');
-      loadProject(d.graph); $('#code').value = d.code || DEFAULT_CODE; cgText = null; pendingCodeGraph = d.codeGraph || null; autosave(); setMode(d.graph.design && d.graph.design.shapes.length && d.graph.nodes.length <= 1 ? 'design' : 'nodes');
+      newProject((e.target.files[0].name || 'Opened sketch').replace(/\.daub\.json$|\.json$/i, ''), d);
     } catch (err) { status(err.message, true); }
     e.target.value = '';
   };
@@ -434,7 +533,9 @@
     });
   }
 
-  window.Daub.app = { editor, cgEditor, runSketch, renderNodes, setMode, setCodeView, toast };
+  window.Daub.app = { editor, cgEditor, projects: () => projects, startProject, openProject, runSketch, renderNodes, setMode, setCodeView, toast };
+  if (startView && startView.mode && startView.mode !== 'nodes') { if (startView.codeView === 'nodes') codeView = 'nodes'; setMode(startView.mode); }
+  renderProjectBar(); saveNow();
   renderNodes();
   requestAnimationFrame(frame);
 })();
