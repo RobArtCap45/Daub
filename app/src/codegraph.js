@@ -635,6 +635,27 @@
     return out.join('\n') + (out.length ? '\n' : '');
   }
 
+  // copy a node (and everything inside it) into graph gph; returns the copy, or null for Start. nextId() gives fresh ids.
+  function duplicate(project, gph, id, nextId) {
+    const src = gph.nodes.find((n) => n.id === id);
+    if (!src || src.type === 'start') return null;
+    const subs = project.subs || (project.subs = {});
+    const copyNode = (n) => {
+      const c = { id: nextId(), type: n.type, x: n.x + 30, y: n.y + 30, params: JSON.parse(JSON.stringify(n.params || {})) };
+      if (subs[n.id]) subs[c.id] = cloneGraph(subs[n.id]);
+      return c;
+    };
+    const cloneGraph = (sub) => {
+      const map = new Map([['start', 'start']]);
+      const nodes = sub.nodes.map((m) => { if (m.id === 'start') return { ...m, params: {} }; const c = copyNode(m); map.set(m.id, c.id); return c; });
+      const edges = sub.edges.filter((e) => map.has(e.from) && map.has(e.to)).map((e) => ({ from: map.get(e.from), to: map.get(e.to), input: e.input }));
+      return { name: sub.name, nodes, edges };
+    };
+    const c = copyNode(src);
+    gph.nodes.push(c);
+    return c;
+  }
+
   // the statements that are wired up, as a count (for messages)
   function stats(project) {
     const all = [project, ...Object.values(project.subs || {})];
@@ -643,6 +664,6 @@
     return { nodes: total, raw };
   }
 
-  D.codegraph = { compile, generate, decompile: generate, getDef, entries, defaults, newArg, layout, nodeTitle, stats, API, _tokens: (s) => prepare(s).filter((t) => t.t !== 'eof').map((t) => t.v) };
+  D.codegraph = { compile, generate, decompile: generate, getDef, entries, defaults, newArg, duplicate, layout, nodeTitle, stats, API, _tokens: (s) => prepare(s).filter((t) => t.t !== 'eof').map((t) => t.v) };
   if (D.PORT_COLORS) Object.assign(D.PORT_COLORS, { flow: '#e8483a', text: '#9a9a94', note: '#9a9a94', code: '#9a9a94' });
 })(window);

@@ -89,6 +89,17 @@ check('an edited container body shows up in the code', (() => { const g = C.comp
 check('new nodes get working defaults', (() => { const g = C.compile(''); g.nodes.push({ id: 'z', type: 'call:rect/4', x: 0, y: 0, params: C.defaults('call:rect/4') }); g.edges.push({ from: 'start', to: 'z', input: 'flow' }); return /^rect\(40, 40, 120, 80\);/.test(C.generate(g)); })());
 check('every menu entry makes valid code', C.entries().every((e) => { if (e.type === 'elseif' || e.type === 'else') return true; const g = C.compile(''); g.nodes.push({ id: 'z', type: e.type, x: 0, y: 0, params: C.defaults(e.type) }); g.edges.push({ from: 'start', to: 'z', input: 'flow' }); const code = C.generate(g); try { new Function('for(;;){' + code + '}'); return true; } catch (err) { console.log('   ', e.type, JSON.stringify(code)); return false; } }));
 
+
+// ----- duplicating
+check('duplicate copies a container with fresh ids for everything inside', (() => {
+  const g = C.compile('function draw() {\n  background(0);\n  circle(1, 2, 3);\n}');
+  let k = 100; const c = C.duplicate(g, g, g.nodes[1].id, () => 'n' + ++k);
+  const orig = g.subs[g.nodes[1].id], copy = g.subs[c.id];
+  const ids = new Set([...orig.nodes, ...copy.nodes].filter((n) => n.id !== 'start').map((n) => n.id));
+  return copy.nodes.length === orig.nodes.length && ids.size === (orig.nodes.length - 1) * 2 && copy.edges.length === orig.edges.length;
+})());
+check('duplicate does nothing for Start', C.duplicate(C.compile('f();'), C.compile('f();'), 'start', () => 'x') === null);
+
 // ----- errors
 const err = (s) => { try { C.compile(s); return null; } catch (e) { return e; } };
 check('a missing } is reported with a line', (() => { const e = err('function f() {\n  a();\n'); return e && /never closed/.test(e.message); })());

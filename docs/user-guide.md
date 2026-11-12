@@ -11,6 +11,12 @@ Daub has four workspaces, switched with the tabs at the top. They all work on th
 
 Not sure where to start? Open **Examples** in the top bar and pick one.
 
+## Projects
+
+The name in the header is your project: click it to rename. The dot beside it is green when everything is saved and orange for a moment while it saves. Next to it you can see where you are, such as *Code · Nodes*.
+
+The **Projects** menu lists every project in this browser, newest first. Click one to open it (Daub remembers the tab you were on), or use **New project**, **Duplicate this project** and **Delete this project**. Opening an example starts a new project, so your own work is never overwritten. Projects are stored in this browser only: use **File → Save** to keep a file you can move or back up, and **File → Open…** to bring one in as a new project.
+
 ## Design tab
 
 - **Draw:** pick a tool on the left and drag on the artboard: Rectangle (R), Ellipse (O), Polygon (Y), Star (S), Line (L). A plain click makes a 100 px shape.

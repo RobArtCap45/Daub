@@ -285,19 +285,27 @@
           const inp = el(multi ? 'textarea' : 'input'); if (multi) inp.rows = Math.min(8, v0.split('\n').length); else inp.type = 'text';
           inp.spellcheck = false; inp.value = v0; inp.placeholder = ' ';
           const numeric = (t) => /^-?\d+(?:\.\d+)?$/.test(t.trim());
-          const mark = () => lab.classList.toggle('scrub', numeric(inp.value));
-          inp.oninput = () => { n.params[s.n] = inp.value; mark(); this.changed(); };
-          inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && !multi && !ev.shiftKey) { ev.preventDefault(); inp.blur(); } ev.stopPropagation(); });
-          row.appendChild(inp); mark(); lab.title = 'Drag left/right to change a number';
-          lab.addEventListener('pointerdown', (ev) => {
-            if (!numeric(inp.value)) return;
-            ev.stopPropagation();
+          const mark = () => { lab.classList.toggle('scrub', numeric(inp.value)); inp.classList.toggle('num', numeric(inp.value)); };
+          const scrub = (ev, onUp) => {
             const x0 = ev.clientX, v0n = parseFloat(inp.value), isInt = Number.isInteger(v0n), k = Math.max(0.01, Math.abs(v0n) / 100);
+            let moved = false;
             this.drag(ev, (m) => {
+              if (!moved && Math.abs(m.clientX - x0) < 3) return;
+              moved = true;
               let v = v0n + (m.clientX - x0) * (isInt ? Math.max(1, k) : k) * (m.shiftKey ? 0.1 : 1);
               v = isInt && !m.shiftKey ? Math.round(v) : Math.round(v * 1000) / 1000;
               inp.value = v; n.params[s.n] = String(v); this.changed();
-            });
+            }, () => onUp && onUp(moved));
+          };
+          inp.oninput = () => { n.params[s.n] = inp.value; mark(); this.changed(); };
+          inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && !multi && !ev.shiftKey) { ev.preventDefault(); inp.blur(); } ev.stopPropagation(); });
+          row.appendChild(inp); mark(); lab.title = 'Drag left/right to change a number';
+          lab.addEventListener('pointerdown', (ev) => { if (!numeric(inp.value)) return; ev.stopPropagation(); this.setSel([n.id]); scrub(ev); });
+          // a number can be dragged right on its field (a plain click still types into it)
+          inp.addEventListener('pointerdown', (ev) => {
+            if (document.activeElement === inp || !numeric(inp.value)) return;
+            ev.stopPropagation(); this.setSel([n.id]);
+            scrub(ev, (moved) => { if (!moved) { inp.focus(); inp.select(); } });
           });
         } else if (s.t === 'num') {
           const inp = el('input'); inp.type = 'number'; inp.step = 'any'; inp.value = n.params[s.n] ?? s.d;
@@ -327,6 +335,21 @@
           row.appendChild(pin);
         }
         box.appendChild(row);
+      }
+      if (code && def.variadic && /^(?:fill|stroke|background)$/.test(def.variadic.fn) && !this.hsb) {
+        const k = def.inputs.filter((q) => q.t === 'text').length, vals = [0, 1, 2].map((i) => n.params['a' + i]);
+        if ((k === 3 || k === 4) && vals.every((v) => /^\d+(?:\.\d+)?$/.test(String(v).trim()))) {
+          const row = el('div', 'row swatchrow'), sw = el('input'); sw.type = 'color'; sw.title = 'Pick a color';
+          const hex = (v) => Math.max(0, Math.min(255, Math.round(+v))).toString(16).padStart(2, '0');
+          sw.value = '#' + vals.map(hex).join('');
+          sw.oninput = () => {
+            [1, 3, 5].forEach((at, i) => { n.params['a' + i] = String(parseInt(sw.value.slice(at, at + 2), 16)); });
+            box.querySelectorAll('input[type=text]').forEach((t, i) => { if (i < 3) t.value = n.params['a' + i]; });
+            this.changed();
+          };
+          sw.addEventListener('pointerdown', (e) => e.stopPropagation());
+          row.append(el('label', '', 'color'), sw); box.insertBefore(row, box.children[1]);
+        }
       }
       return box;
     }
@@ -382,7 +405,9 @@
         path.remove();
         const t = document.elementFromPoint(ev.clientX, ev.clientY);
         const dot = t && t.closest && t.closest('.dot.in');
-        if (dot) this.connect(fromId, dot.dataset.node, dot.dataset.input); else { this.rebuild(); this.changed(); }
+        if (dot) this.connect(fromId, dot.dataset.node, dot.dataset.input);
+        else if (this.onWireDrop) { this.rebuild(); this.onWireDrop(fromId, ev); }
+        else { this.rebuild(); this.changed(); }
       });
       path.setAttribute('d', this.pathD(a, a));
     }

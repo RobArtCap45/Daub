@@ -52,7 +52,9 @@ Click **Nodes** above the editor to see the same sketch as a graph. Every statem
 - Edit the nodes or the text; the other follows when you switch (and the sketch re-runs as you change a node).
 - Drag a number's label left or right to change it. **+** and **−** in a call's header add and remove an argument.
 - **Open** on a loop, `if` or function shows what is inside. Press Esc to go back out.
-- Double-click the background to add a node. It is wired in after the selected node, or at the end.
+- Double-click the background to add a node. It is wired in after the selected node, or at the end. Dropping a wire on empty space does the same, right after that node.
+- Drag a number on its field to change it (a click types into it). `fill`, `stroke` and `background` have a color swatch (not shown after `colorMode(HSB)`).
+- Ctrl/Cmd+D duplicates the selected nodes, including what is inside a loop or function.
 - Delete closes the gap in the wires. A node that is not wired to Start does not run and is shown dimmed.
 - `else` and `else if` have to come right after an `if`.
 - Code Daub has no node for (classes, destructuring, `switch`, …) stays as a **code** node, exactly as typed. A function passed to another call, like `list.forEach((v) => { … })`, shows as one text value.
