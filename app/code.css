@@ -61,3 +61,8 @@
 .codeg .node .swatchrow input[type=color]{width:46px;height:22px;padding:0;border:1px solid var(--line);border-radius:4px;background:#fff;cursor:pointer;margin-left:auto}
 .codeg .node .row input.num{cursor:ew-resize}
 .codeg .node .row input.num:focus{cursor:text}
+/* notes after converting */
+#notice{position:fixed;left:14px;bottom:14px;max-width:440px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px #0003;padding:12px 16px;z-index:30;font-size:12.5px}
+#notice[hidden]{display:none}
+#notice b{font-size:13px}
+#notice ul{margin:8px 0 10px;padding-left:18px;color:#444}#notice li{margin:4px 0}

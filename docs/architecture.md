@@ -12,6 +12,8 @@ daub/
 │       ├── script.js    the text language: lexer, parser, compiler, decompiler               (no DOM)
 │       ├── sketch.js    the Processing-style API for the Code tab
 │       ├── codegraph.js code <-> statement nodes: parser and code writer                       (no DOM)
+│       ├── pde.js       Processing (Java) -> Daub JavaScript                                   (no DOM)
+│       ├── togen.js     a sketch -> the Nodes tab's nodes (records the sketch, then fits nodes)  (no DOM)
 │       ├── editor.js    the node editor (DOM + SVG wires)
 │       ├── codeeditor.js the node editor set up for code (Start node, wires = run order)
 │       ├── design.js    the Design workspace
@@ -55,6 +57,12 @@ The Code tab can show its sketch as a graph (**Code → Nodes**). `codegraph.js`
 - A call is `call:<name>/<number of arguments>` (for example `call:rect/4`); its arguments are the params `a0, a1, …`. Variables, assignments and the rest have their own types. Anything the parser does not understand becomes a `raw` node holding the exact text, so every program round-trips.
 - Comments are kept as the `note` (above) and `trail` (same line) params of the statement they belong to.
 - The test checks every Code example: code → nodes → code gives the same program, and a second trip changes nothing.
+
+## Processing import and Sketch to nodes
+
+`pde.js` rewrites Processing (Java) to JavaScript. It edits the source in place by token ranges, so comments and layout survive, and it keeps a small table of variable types (for `ArrayList`, `HashMap` and `int` division). `tests/pde.test.js` covers declarations, casts, collections, classes and runs converted code to check Java's behavior (whole-number division, 2-D arrays).
+
+`togen.js` does not translate the code. It **runs** the sketch once with a recorder instead of a canvas (frame 1, mouse in the middle) and writes down every shape with its final place, size, rotation and colors. Then it matches shapes to nodes: runs of one kind become one shape node plus Copy to Points; positions are tested for a lattice (Grid), a full circle (Ring) or else Scatter; per-shape sizes, rotations and colors are fitted to `a + b × attribute` and become Attribute → Remap (otherwise a Random node, flagged as approximate). `tests/togen.test.js` checks that the nodes put every shape where the sketch did, and that all Code examples convert to valid projects.
 
 `codeeditor.js` makes the editor behave for code: new nodes are wired in after the selected one, deleting a node closes the gap, and nodes that are not wired to Start are dimmed. The app (`app.js`) keeps the text and the graph in step when you switch.
 
