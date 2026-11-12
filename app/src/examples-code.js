@@ -1326,4 +1326,60 @@ function draw() {
 }
 `],
   ]);
+  add('Images', [
+    ['ASCII Dither', `// A picture turned into colored blocks of text. Brightness picks one of three tones (with Bayer dithering
+// where two tones meet), and each tone has its own pool of glyphs.
+// loadImage() gives you the demo picture. Use "Load image…" above the editor to try your own.
+let img;
+const COLS = 60;                              // grid size. try 30, 60, 90
+let CELL;
+const TONE = ['#8a8f94', '#e8554e', '#4caf3a'];   // block colors, dark -> light
+const POOL = ['8X@#', '*+?%', ':;,.'];            // glyphs for each tone
+const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+
+function setup() {
+  img = loadImage('picture.jpg');
+  img.resize(COLS, 0);
+  img.loadPixels();
+  CELL = min(width / COLS, height / img.height);
+  textFont(createFont('Courier', CELL, true));
+  textAlign(CENTER, CENTER);
+  noLoop();
+}
+
+function draw() {
+  background(0);
+  noStroke();
+  const x0 = (width - img.width * CELL) / 2;      // center the grid on the canvas
+  const y0 = (height - img.height * CELL) / 2;
+  for (let y = 0; y < img.height; y++) {
+    for (let x = 0; x < img.width; x++) {
+      const c = img.pixels[y * img.width + x];
+      if (alpha(c) < 128 || brightness(c) < 20) continue;   // empty cell stays black
+
+      const t = pickTone(brightness(c) / 255, x, y);
+      const g = pickGlyph(t, x, y);
+
+      fill(TONE[t]);
+      rect(x0 + x * CELL, y0 + y * CELL, CELL, CELL);
+      fill(0);
+      text(g, x0 + (x + 0.5) * CELL, y0 + (y + 0.5) * CELL);
+    }
+  }
+}
+
+function pickTone(b, x, y) {                      // 0 = darkest tone
+  const v = (1 - b) * (TONE.length - 1);          // dark pixels -> low index
+  const thr = (BAYER[y % 4][x % 4] + 0.5) / 16;
+  const base = floor(v);
+  return constrain(base + (v - base > thr ? 1 : 0), 0, TONE.length - 1);
+}
+
+function pickGlyph(t, x, y) {
+  const pool = POOL[t];
+  const h = abs((x * 73856093) ^ (y * 19349663)); // repeatable "random" number
+  return pool.charAt(h % pool.length);            // swap for: pool.charAt(x % pool.length)
+}
+`],
+  ]);
 })(window);

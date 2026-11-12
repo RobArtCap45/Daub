@@ -6,12 +6,14 @@ Daub is plain JavaScript that runs in a browser tab or in the Electron desktop w
 daub/
 ├── app/                 the app. Open app/index.html and it runs.
 │   ├── index.html       page shell, content-security-policy
-│   ├── *.css            style.css (base, node editor), design.css (Design tab, dialogs), script.css (Script tab)
+│   ├── *.css            style.css (base, node editor), design.css (Design tab, dialogs), script.css (Script tab), code.css (Code tab and code nodes)
 │   └── src/
 │       ├── engine.js    the core: node definitions, graph evaluation, geometry, rendering   (no DOM needed, except SVG import)
 │       ├── script.js    the text language: lexer, parser, compiler, decompiler               (no DOM)
 │       ├── sketch.js    the Processing-style API for the Code tab
+│       ├── codegraph.js code <-> statement nodes: parser and code writer                       (no DOM)
 │       ├── editor.js    the node editor (DOM + SVG wires)
+│       ├── codeeditor.js the node editor set up for code (Start node, wires = run order)
 │       ├── design.js    the Design workspace
 │       ├── draw.js      the full-screen pen editor
 │       ├── examples.js, examples-code.js   built-in examples
@@ -43,6 +45,18 @@ Everything you make is one JSON object (the *project*), also what **File → Sav
 - An **edge** connects a node's output to one named input of another.
 - A **custom node** (`subs`) is its own small graph. `inputs` lists which inner values are shown as controls; `out` is the inner node whose result it returns.
 - The **design** is a list of shapes with optional keyframes, evaluated at a time `t`.
+
+## Code as nodes
+
+The Code tab can show its sketch as a graph (**Code → Nodes**). `codegraph.js` does the work and has no DOM, so `tests/codegraph.test.js` runs it in Node.
+
+- `compile(text)` splits the code into statements and makes a node for each one. `generate(graph)` writes the code again by following the wires from the Start node.
+- A graph has the same shape as the rest of the editor: `nodes`, `edges` (always `input: 'flow'`), and `subs`. A loop, `if` or function is a *container* node: its body is a graph of its own in `subs[nodeId]`.
+- A call is `call:<name>/<number of arguments>` (for example `call:rect/4`); its arguments are the params `a0, a1, …`. Variables, assignments and the rest have their own types. Anything the parser does not understand becomes a `raw` node holding the exact text, so every program round-trips.
+- Comments are kept as the `note` (above) and `trail` (same line) params of the statement they belong to.
+- The test checks every Code example: code → nodes → code gives the same program, and a second trip changes nothing.
+
+`codeeditor.js` makes the editor behave for code: new nodes are wired in after the selected one, deleting a node closes the gap, and nodes that are not wired to Start are dimmed. The app (`app.js`) keeps the text and the graph in step when you switch.
 
 ## How a frame is made
 

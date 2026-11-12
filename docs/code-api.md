@@ -24,15 +24,51 @@ function draw() {
 - **Vectors:** `createVector(x, y)` or `new PVector(x, y)`, with `add sub mult div mag normalize setMag limit dist dot heading rotate lerp copy`, and static `PVector.add/sub/mult/div/dist/fromAngle/random2D`.
 - **Time and input:** `frameCount frameRate noLoop loop redraw millis hour minute second day month year`, `mouseX mouseY pmouseX pmouseY mouseIsPressed mouseButton`, and the event functions `mousePressed mouseReleased mouseClicked mouseMoved mouseDragged keyPressed keyReleased keyTyped` with `key keyCode keyIsPressed`. **Click the canvas to give the sketch the keyboard.**
 
+## Images and fonts
+
+```js
+let img;
+function setup() {
+  img = loadImage('photo.jpg');   // see the note below
+  img.resize(60, 0);              // 0 keeps the proportions
+  img.loadPixels();
+  textFont(createFont('Courier', 10));
+}
+function draw() {
+  const c = img.pixels[0];        // a color: use it with fill(), red(), brightness() …
+  image(img, 0, 0);
+}
+```
+
+- `loadImage(path)`, `createImage(w, h)`, `image(img, x, y, w, h)`.
+- A picture has `width`, `height`, `pixels[]` (one color per pixel, after `loadPixels()`), `updatePixels()`, `get(x, y)`, `resize(w, h)` and `copy()`.
+- `brightness(c)` joins `red green blue alpha`. `createFont(name, size)` and `textFont(font)` choose the font for `text()`.
+- **A browser cannot read files from your disk**, so `loadImage()` ignores the path. It gives the picture you chose with **Load image…** above the editor (or dropped on the preview), and a built-in demo picture until you do. The picture is not saved with the sketch.
+
+## Code as nodes
+
+Click **Nodes** above the editor to see the same sketch as a graph. Every statement is a node and the wires say what runs next, starting from **Start**.
+
+- Edit the nodes or the text; the other follows when you switch (and the sketch re-runs as you change a node).
+- Drag a number's label left or right to change it. **+** and **−** in a call's header add and remove an argument.
+- **Open** on a loop, `if` or function shows what is inside. Press Esc to go back out.
+- Double-click the background to add a node. It is wired in after the selected node, or at the end.
+- Delete closes the gap in the wires. A node that is not wired to Start does not run and is shown dimmed.
+- `else` and `else if` have to come right after an `if`.
+- Code Daub has no node for (classes, destructuring, `switch`, …) stays as a **code** node, exactly as typed. A function passed to another call, like `list.forEach((v) => { … })`, shows as one text value.
+- When you change a node, the text is rewritten in Daub's tidy layout (two-space indent, semicolons). The comments and the order of your code stay.
+
 ## Examples
 
-**Examples → Code** has 61 sketches grouped by learning topic: color, control, forms, input, math, structure, transform, typography, cellular automata, drawing, fractals, interaction, motion, simulation and vectors. They are original programs written for Daub. They are *not* copies of the Processing examples, which are under a different license.
+**Examples → Code** has 62 sketches grouped by learning topic: color, control, forms, images, input, math, structure, transform, typography, cellular automata, drawing, fractals, interaction, motion, simulation and vectors. They are original programs written for Daub. They are *not* copies of the Processing examples, which are under a different license.
 
 ## Not supported (yet)
 
-3D, cameras, lights, images and pixel arrays, file input/output, `createGraphics`, and Java-mode classes (plain JavaScript classes work fine).
+3D, cameras, lights, the global `pixels[]` of the canvas, `tint`, file input/output, `createGraphics`, and Java-mode classes (plain JavaScript classes work fine).
 
 ## Differences from Processing
+
+- The canvas is always 600 × 600: `size()` and `createCanvas()` are ignored, and `width` / `height` are 600.
 
 - It is JavaScript: `let` / `const` instead of types, `Math.floor` or `floor`, arrays are `[]`.
 - Colors are CSS strings internally, so `color(...)` gives a string you can pass to `fill`, `stroke`, `lerpColor`.
