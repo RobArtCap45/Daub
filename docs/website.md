@@ -16,6 +16,10 @@ _site/
 
 It is plain HTML, CSS and JavaScript. There is nothing to compile, so any static host works.
 
+## Host it on Cloudflare Workers (what daubdesign.app uses)
+
+`wrangler.jsonc` serves `_site/` as static assets and builds it first (`build.command`), so the deploy command is just `npx wrangler deploy`. In the Worker's **Settings → Builds**, leave the build command empty (or `node scripts/build-site.js`) and set the deploy command to `npx wrangler deploy`. `_site/` is not in git, so a deploy that skips the build fails with "assets directory does not exist".
+
 ## Host it on Cloudflare Pages (free)
 
 1. In the Cloudflare dashboard go to **Workers & Pages → Create → Pages → Connect to Git** and choose this repository.
