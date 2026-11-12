@@ -14,7 +14,7 @@
   "scripts": {
     "start": "electron .",
     "web": "node scripts/serve.js",
-    "test": "node scripts/check-syntax.js && node tests/engine.test.js && node tests/script.test.js",
+    "test": "node scripts/check-syntax.js && node tests/engine.test.js && node tests/script.test.js && node tests/codegraph.test.js",
     "docs": "node scripts/gen-docs.js",
     "build:site": "node scripts/build-site.js",
     "pack": "electron-builder --dir",

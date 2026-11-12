@@ -21,7 +21,7 @@
   class Editor {
     constructor(host, project, onChange) {
       this.el = host; this.onChange = onChange; this.pan = { x: 20, y: 20 }; this.scale = 1;
-      this.stack = []; this.sel = new Set();
+      this.stack = []; this.sel = new Set(); this.noteOpen = new Set();
       this.world = el('div', 'world');
       this.svg = document.createElementNS(SVGNS, 'svg'); this.svg.setAttribute('class', 'wires');
       this.world.appendChild(this.svg); host.appendChild(this.world);
@@ -47,6 +47,7 @@
     // ----- project / navigation
     get subs() { return (this.project.subs = this.project.subs || {}); }
     def(type) { return getDef(type, this.subs); }
+    get codeMode() { return false; } // the code-as-nodes editor (CodeEditor) turns this on
     get sub() { return this.stack.length ? this.subs[this.stack[this.stack.length - 1]] : null; }
     setProject(p, fit = true, keepPath = false) {
       this.project = p; this.subs;
@@ -131,13 +132,15 @@
       this.graph.nodes = this.graph.nodes.filter((n) => !set.has(n.id));
       this.graph.edges = this.graph.edges.filter((e) => !set.has(e.from) && !set.has(e.to));
       const sub = this.sub;
-      if (sub) {
+      if (sub && sub.inputs) {
         sub.inputs = sub.inputs.filter((i) => !set.has(i.node));
         if (set.has(sub.out)) { const c = [...sub.nodes].reverse().find((n) => this.def(n.type).out); sub.out = c ? c.id : null; }
       }
       this.sel = new Set(); this.pruneEdges(); this.rebuild(); this.changed();
     }
     removeNode(id) { this.removeNodes([id]); }
+    // change what kind of node this is, keeping its values (used to add or remove an argument)
+    retype(n, type) { n.type = type; this.pruneEdges(); this.rebuild(); this.changed(); }
     deleteSelected() { const ids = this.selectedNodes().filter((n) => !this.def(n.type).singleton).map((n) => n.id); if (ids.length) this.removeNodes(ids); }
 
     connect(from, to, input) {
@@ -145,7 +148,7 @@
       if (!a || !b || from === to) return;
       const spec = this.def(b.type).inputs.find((s) => s.n === input);
       if (!spec || !compat(this.def(a.type).out, spec.t)) return;
-      this.graph.edges = this.graph.edges.filter((e) => !(e.to === to && e.input === input));
+      this.graph.edges = this.graph.edges.filter((e) => !(e.to === to && e.input === input) && !(spec.t === 'flow' && e.from === from && e.input === input));
       this.graph.edges.push({ from, to, input });
       this.rebuild(); this.changed();
     }
@@ -218,14 +221,25 @@
 
     buildNode(n, connected) {
       const def = this.def(n.type), sub = this.sub, custom = !!def.custom;
-      const box = el('div', 'node' + (this.sel.has(n.id) ? ' sel' : '') + (custom ? ' custom' : '') + (sub && sub.out === n.id ? ' isout' : ''));
+      const code = this.codeMode;
+      const box = el('div', 'node' + (this.sel.has(n.id) ? ' sel' : '') + (custom ? ' custom' : '') + (!code && sub && sub.out === n.id ? ' isout' : '') + (code ? ' k-' + (def.cat || 'x') : '') + (def.container ? ' container' : ''));
       box.dataset.id = n.id; box.style.left = n.x + 'px'; box.style.top = n.y + 'px';
       const hd = el('div', 'hd'); hd.title = def.desc || ''; hd.appendChild(el('span', 'title', def.label));
       if (custom) {
         const open = el('span', 'open', 'Open'); open.title = 'Edit inside this custom node';
         open.addEventListener('pointerdown', (e) => e.stopPropagation()); open.onclick = () => this.enter(n.type.slice(4)); hd.appendChild(open);
       }
-      if (sub && def.out) {
+      if (def.container) {
+        const open = el('span', 'open', 'Open'); open.title = 'Edit what is inside';
+        open.addEventListener('pointerdown', (e) => e.stopPropagation()); open.onclick = () => this.enter(n.id); hd.appendChild(open);
+      }
+      if (def.variadic) {
+        const k = def.inputs.filter((q) => q.t === 'text').length;
+        const more = (d) => { const to = k + d; if (to < def.variadic.min || to > def.variadic.max) return; this.retype(n, `call:${def.variadic.fn}/${to}`); };
+        const mk = (txt, title, d) => { const b = el('span', 'argbtn', txt); b.title = title; b.addEventListener('pointerdown', (e) => e.stopPropagation()); b.onclick = () => more(d); hd.appendChild(b); };
+        mk('−', 'Remove the last argument', -1); mk('+', 'Add an argument', 1);
+      }
+      if (!code && sub && def.out) {
         const ob = el('span', 'outbtn' + (sub.out === n.id ? ' on' : ''), sub.out === n.id ? 'output' : '◦'); ob.title = 'Use this node as the output of the custom node';
         ob.addEventListener('pointerdown', (e) => e.stopPropagation()); ob.onclick = () => this.setOut(n.id); hd.appendChild(ob);
       }
@@ -240,8 +254,9 @@
         else if (!this.sel.has(n.id)) this.setSel([n.id]);
       });
       if (custom) hd.addEventListener('dblclick', (e) => { if (!e.target.closest('.dot,.x,.outbtn')) this.enter(n.type.slice(4)); });
+      if (def.container) hd.addEventListener('dblclick', (e) => { if (!e.target.closest('.dot,.x,.open,.argbtn')) this.enter(n.id); });
       hd.addEventListener('pointerdown', (e) => {
-        if (e.target.closest('.dot,.x,.open,.outbtn') || e.shiftKey) return;
+        if (e.target.closest('.dot,.x,.open,.outbtn,.argbtn') || e.shiftKey) return;
         const moving = this.selectedNodes(), start = moving.map((q) => ({ q, x: q.x, y: q.y })), px = e.clientX, py = e.clientY;
         this.drag(e, (ev) => {
           const dx = (ev.clientX - px) / this.scale, dy = (ev.clientY - py) / this.scale;
@@ -252,9 +267,9 @@
       box.appendChild(hd);
 
       for (const s of def.inputs) {
-        if (s.t === 'svg' || s.t === 'draw') { box.appendChild(this.specialRow(n, s)); continue; }
+        if (s.t === 'svg' || s.t === 'draw' || s.t === 'note' || s.t === 'code') { box.appendChild(this.specialRow(n, s)); continue; }
         const isConn = connected.has(n.id + ':' + s.n);
-        const published = sub && sub.inputs.some((i) => i.node === n.id && i.input === s.n);
+        const published = !code && sub && sub.inputs && sub.inputs.some((i) => i.node === n.id && i.input === s.n);
         const row = el('div', 'row' + (isConn ? ' connected' : '') + (published ? ' published' : ''));
         const dot = el('span', 'dot in'); dot.dataset.node = n.id; dot.dataset.input = s.n; dot.style.setProperty('--c', PORT_COLORS[s.t]);
         dot.addEventListener('pointerdown', (e) => {
@@ -264,8 +279,27 @@
           this.graph.edges = this.graph.edges.filter((ed) => ed !== edge); // pick up the wire
           this.rebuild(); this.startWire(e, edge.from);
         });
-        const lab = el('label', '', LABELS[s.n] || s.n); row.append(dot, lab);
-        if (s.t === 'num') {
+        const lab = el('label', '', s.label || LABELS[s.n] || s.n); row.append(dot, lab);
+        if (s.t === 'text') {
+          const v0 = String(n.params[s.n] ?? s.d ?? ''), multi = v0.includes('\n');
+          const inp = el(multi ? 'textarea' : 'input'); if (multi) inp.rows = Math.min(8, v0.split('\n').length); else inp.type = 'text';
+          inp.spellcheck = false; inp.value = v0; inp.placeholder = ' ';
+          const numeric = (t) => /^-?\d+(?:\.\d+)?$/.test(t.trim());
+          const mark = () => lab.classList.toggle('scrub', numeric(inp.value));
+          inp.oninput = () => { n.params[s.n] = inp.value; mark(); this.changed(); };
+          inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && !multi && !ev.shiftKey) { ev.preventDefault(); inp.blur(); } ev.stopPropagation(); });
+          row.appendChild(inp); mark(); lab.title = 'Drag left/right to change a number';
+          lab.addEventListener('pointerdown', (ev) => {
+            if (!numeric(inp.value)) return;
+            ev.stopPropagation();
+            const x0 = ev.clientX, v0n = parseFloat(inp.value), isInt = Number.isInteger(v0n), k = Math.max(0.01, Math.abs(v0n) / 100);
+            this.drag(ev, (m) => {
+              let v = v0n + (m.clientX - x0) * (isInt ? Math.max(1, k) : k) * (m.shiftKey ? 0.1 : 1);
+              v = isInt && !m.shiftKey ? Math.round(v) : Math.round(v * 1000) / 1000;
+              inp.value = v; n.params[s.n] = String(v); this.changed();
+            });
+          });
+        } else if (s.t === 'num') {
           const inp = el('input'); inp.type = 'number'; inp.step = 'any'; inp.value = n.params[s.n] ?? s.d;
           inp.oninput = () => { n.params[s.n] = parseFloat(inp.value) || 0; this.changed(); };
           row.appendChild(inp);
@@ -287,7 +321,7 @@
           sel.onchange = () => { n.params[s.n] = sel.value; this.changed(); };
           row.appendChild(sel);
         }
-        if (sub && !isConn) {
+        if (!code && sub && !isConn) {
           const pin = el('span', 'pin' + (published ? ' on' : '')); pin.title = published ? 'Shown on the custom node (click to hide)' : 'Show this value on the custom node';
           pin.addEventListener('pointerdown', (e) => e.stopPropagation()); pin.onclick = () => this.togglePublish(n.id, s.n);
           row.appendChild(pin);
@@ -300,6 +334,20 @@
     // rows with no wire port: a file picker for SVGs, a thumbnail + Edit button for pen drawings
     specialRow(n, s) {
       const row = el('div', 'row wide');
+      if (s.t === 'note' || s.t === 'code') {
+        const v = String(n.params[s.n] ?? '');
+        if (s.t === 'note' && !v && !this.noteOpen.has(n.id)) { // an empty note is just a small link
+          const a = el('span', 'addnote', '+ comment'); a.title = 'Add a comment to this statement';
+          a.onclick = () => { this.noteOpen.add(n.id); this.rebuild(); const t = this.world.querySelector(`.node[data-id="${n.id}"] textarea.note`); if (t) t.focus(); };
+          row.appendChild(a); return row;
+        }
+        const t = el('textarea', s.t); t.spellcheck = false; t.value = v; t.rows = Math.max(s.t === 'code' ? 3 : 1, Math.min(10, v.split('\n').length));
+        t.placeholder = s.t === 'code' ? 'code' : '// comment';
+        t.oninput = () => { n.params[s.n] = t.value; this.changed(); };
+        t.addEventListener('keydown', (ev) => { if (ev.key === 'Tab' && s.t === 'code') { ev.preventDefault(); t.setRangeText('  ', t.selectionStart, t.selectionEnd, 'end'); t.oninput(); } ev.stopPropagation(); });
+        t.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+        row.appendChild(t); return row;
+      }
       if (s.t === 'svg') {
         const b = el('button', 'wbtn', n.params.svgName ? '📄 ' + n.params.svgName : 'Choose SVG file…'); b.title = 'Pick an .svg exported from Illustrator, Figma, Inkscape…';
         const f = document.createElement('input'); f.type = 'file'; f.accept = '.svg,image/svg+xml'; f.hidden = true;

@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="design.css">
 <link rel="stylesheet" href="script.css">
+<link rel="stylesheet" href="code.css">
 </head>
 <body>
 <header>
@@ -45,6 +46,7 @@
     <div id="graph"></div>
     <div id="crumbs" hidden></div>
     <div id="bar" hidden></div>
+    <button id="toCode" title="Your Code sketch, shown as nodes. It is the same code as in the Code tab.">Edit the Code sketch as nodes →</button>
     <div id="hint">Double-click to add a node · Shift+drag to select several · scroll to zoom · F to fit</div>
     <div id="welcome" hidden>
       <h2>Welcome to Daub</h2>
@@ -81,7 +83,20 @@
       <div id="sRefList"></div>
     </details>
   </section>
-  <section id="codeView" hidden><textarea id="code" spellcheck="false"></textarea></section>
+  <section id="codeView" hidden>
+    <div class="cbar">
+      <div class="seg" role="group" aria-label="Show the code as"><button id="cvText" class="on">Text</button><button id="cvNodes" title="Edit this same code as nodes">Nodes</button></div>
+      <button id="loadImg" title="Use your own picture for loadImage() in a sketch">Load image…</button><button id="clearImg" title="Go back to the demo picture" hidden>✕</button>
+      <input type="file" id="imgFile" accept="image/*" hidden>
+      <span id="cMsg"></span><span class="spacer"></span>
+    </div>
+    <textarea id="code" spellcheck="false"></textarea>
+    <div id="codeNodes" hidden>
+      <div id="cgraph"></div>
+      <div id="cCrumbs" hidden></div>
+      <div id="cHint">Each node is one line of your code, and the wires say what runs next · double-click to add a node · drag a number’s label to change it · Open a loop or function to edit inside</div>
+    </div>
+  </section>
   <section id="preview"><canvas id="cv"></canvas><div id="status"></div></section>
 </main>
 <div id="pen" hidden>
@@ -105,7 +120,9 @@
 </div>
 <script src="src/engine.js"></script>
 <script src="src/sketch.js"></script>
+<script src="src/codegraph.js"></script>
 <script src="src/editor.js"></script>
+<script src="src/codeeditor.js"></script>
 <script src="src/draw.js"></script>
 <script src="src/design.js"></script>
 <script src="src/script.js"></script>

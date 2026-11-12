@@ -7,7 +7,7 @@ Daub has four workspaces, switched with the tabs at the top. They all work on th
 | **Design** | Draw shapes by hand and animate them on a timeline. |
 | **Nodes** | Build generative art by wiring nodes together. |
 | **Script** | The same node graph as text. See the [language guide](script-language.md). |
-| **Code** | Processing-style JavaScript. See the [code API](code-api.md). |
+| **Code** | Processing-style JavaScript. See the [code API](code-api.md). Switch to **Nodes** to edit the same code as a graph. |
 
 Not sure where to start? Open **Examples** in the top bar and pick one.
 

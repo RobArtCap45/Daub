@@ -1,7 +1,7 @@
 /* Daub app: tabs, render loop, examples, undo/redo, import/export, autosave. */
 (function () {
   'use strict';
-  const { NODES, Editor, examples, validProject } = window.Daub;
+  const { NODES, Editor, CodeEditor, codegraph: cg, examples, validProject } = window.Daub;
   const $ = (s) => document.querySelector(s);
   const W = 600, H = 600, dpr = Math.min(2, window.devicePixelRatio || 1);
   const cv = $('#cv'); cv.width = W * dpr; cv.height = H * dpr;
@@ -9,6 +9,7 @@
   const clone = (o) => JSON.parse(JSON.stringify(o));
   const DEFAULT_CODE = examples.code[0].code;
 
+  let pendingCodeGraph = null; // the saved layout of the code's nodes, used if it still matches the code
   let acc = 0, mode = 'nodes', playing = true, time = 0, last = performance.now(), sketch = null, lastScene = null;
   let graph = clone(examples.nodes[0].graph);
   $('#code').value = DEFAULT_CODE;
@@ -18,20 +19,20 @@
   } catch (e) { /* ignore */ }
   try {
     const saved = JSON.parse(localStorage.getItem('daub.v1') || 'null');
-    if (saved && saved.graph && validProject(saved.graph)) { graph = saved.graph; $('#code').value = saved.code || DEFAULT_CODE; }
+    if (saved && saved.graph && validProject(saved.graph)) { graph = saved.graph; $('#code').value = saved.code || DEFAULT_CODE; pendingCodeGraph = saved.codeGraph || null; }
   } catch (e) { /* ignore */ }
 
   const status = (msg, err) => { const s = $('#status'); s.textContent = err ? '⚠ ' + msg : msg; s.classList.toggle('err', !!err); };
   let toastTimer;
   const toast = (msg, ms = 2600) => { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); if (ms) toastTimer = setTimeout(() => { t.hidden = true; }, ms); };
   let saveTimer;
-  const autosave = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem('daub.v1', JSON.stringify({ graph: editor.project, code: $('#code').value })); } catch (e) { /* ignore */ } }, 400); };
+  const autosave = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem('daub.v1', JSON.stringify({ graph: editor.project, code: $('#code').value, codeGraph: savedCodeGraph() })); } catch (e) { /* ignore */ } }, 400); };
 
   // ---- undo / redo (snapshots of the node graph)
   let hist = [], hi = 0, histTimer;
   const flush = () => { clearTimeout(histTimer); const s = JSON.stringify(editor.project); if (s !== hist[hi]) { hist.length = hi + 1; hist.push(s); hi++; if (hist.length > 100) { hist.shift(); hi--; } } };
   const commit = () => { clearTimeout(histTimer); histTimer = setTimeout(flush, 300); };
-  const restore = (k) => { flush(); const t = hi + k; if (t < 0 || t >= hist.length) return; hi = t; editor.setProject(JSON.parse(hist[hi]), false, true); window.Daub.design.refresh(); autosave(); if (!playing || mode === 'nodes') renderNodes(); };
+  const restore = (k) => { if (activeEd() === cgEditor && cgEditor) return crestore(k); flush(); const t = hi + k; if (t < 0 || t >= hist.length) return; hi = t; editor.setProject(JSON.parse(hist[hi]), false, true); window.Daub.design.refresh(); autosave(); if (!playing || mode === 'nodes') renderNodes(); };
   // replace the whole project (examples, Open…)
   const loadProject = (p) => { editor.setProject(p); resetHistory(); window.Daub.design.refresh(); autosave(); };
   const resetHistory = () => { hist = [JSON.stringify(editor.project)]; hi = 0; };
@@ -45,12 +46,12 @@
 
   // ---- add-node popup (double-click or right-click on the graph)
   const addBox = $('#add'), addq = $('#addq'), addlist = $('#addlist');
-  let addPos = { x: 0, y: 0 }, sel = 0, matches = [];
+  let addPos = { x: 0, y: 0 }, sel = 0, matches = [], addEd = editor;
   const baseEntries = Object.entries(NODES).filter(([, d]) => !d.singleton).map(([type, d]) => ({ type, label: d.label, cat: d.cat, desc: d.desc }));
   let entries = baseEntries;
   const refreshEntries = () => {
     const custom = Object.entries(editor.subs).filter(([id]) => !editor.stack.includes(id)).map(([id, s]) => ({ type: 'sub:' + id, label: s.name, cat: 'Custom', desc: 'Your custom node.' }));
-    entries = [...custom, ...baseEntries];
+    entries = addEd === cgEditor ? cg.entries() : [...custom, ...baseEntries];
   };
   function fillList() {
     const q = addq.value.trim().toLowerCase();
@@ -65,16 +66,18 @@
     });
     const s = addlist.querySelector('.sel'); if (s) s.scrollIntoView({ block: 'nearest' });
   }
-  function pick(m) { addBox.hidden = true; editor.addNode(m.type, addPos.x, addPos.y); }
-  function openAdd(e) {
-    e.preventDefault();
-    const w = editor.world.getBoundingClientRect();
-    addPos = { x: (e.clientX - w.left) / editor.scale, y: (e.clientY - w.top) / editor.scale };
+  function pick(m) { addBox.hidden = true; addEd.addNode(m.type, addPos.x, addPos.y); }
+  function openAdd(e, ed = editor) {
+    e.preventDefault(); addEd = ed;
+    const w = ed.world.getBoundingClientRect();
+    addPos = { x: (e.clientX - w.left) / ed.scale, y: (e.clientY - w.top) / ed.scale };
     addBox.style.left = Math.min(e.clientX, innerWidth - 280) + 'px'; addBox.style.top = Math.min(e.clientY, innerHeight - 380) + 'px';
     refreshEntries(); addq.value = ''; sel = 0; fillList(); addBox.hidden = false; addq.focus();
   }
   $('#graph').addEventListener('dblclick', (e) => { if (e.target === $('#graph') || e.target === editor.world) openAdd(e); });
   $('#graph').addEventListener('contextmenu', (e) => { if (e.target === $('#graph') || e.target === editor.world) openAdd(e); });
+  $('#cgraph').addEventListener('dblclick', (e) => { if (e.target === $('#cgraph') || e.target === cgEditor.world) openAdd(e, cgEditor); });
+  $('#cgraph').addEventListener('contextmenu', (e) => { if (e.target === $('#cgraph') || e.target === cgEditor.world) openAdd(e, cgEditor); });
   addq.addEventListener('input', () => { sel = 0; fillList(); });
   addq.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') addBox.hidden = true;
@@ -83,6 +86,81 @@
     else if (e.key === 'Enter' && matches[sel]) pick(matches[sel]);
   });
   addq.addEventListener('blur', () => { addBox.hidden = true; });
+
+
+  // ---- Code as nodes: the Code tab can show the same program as a graph of statements (see codegraph.js).
+  // The text is the file; the graph is another view of it. Edit either one and the other follows when you switch.
+  let codeView = 'text', cgText = null, codeImage = null, runTimer;
+  const cMsg = $('#cMsg');
+  const sayCode = (msg, err) => { cMsg.textContent = msg || ''; cMsg.className = err ? 'err' : ''; };
+  const countMsg = () => { const st = cg.stats(cgEditor.project); return `${st.nodes} node${st.nodes === 1 ? '' : 's'}${st.raw ? ` · ${st.raw} kept as raw code` : ''}`; };
+  const cgEditor = new CodeEditor($('#cgraph'), cg.compile(''), () => { cgChanged(); ccommit(); });
+  const activeEd = () => (mode === 'nodes' ? editor : mode === 'code' && codeView === 'nodes' ? cgEditor : null);
+  const savedCodeGraph = () => (cgText !== null && cgText === $('#code').value ? cgEditor.project : undefined);
+  let chist = [], chi = 0, chTimer;
+  const resetCgHistory = () => { chist = [JSON.stringify(cgEditor.project)]; chi = 0; };
+  const cflush = () => { clearTimeout(chTimer); const s = JSON.stringify(cgEditor.project); if (s !== chist[chi]) { chist.length = chi + 1; chist.push(s); chi++; if (chist.length > 100) { chist.shift(); chi--; } } };
+  const ccommit = () => { clearTimeout(chTimer); chTimer = setTimeout(cflush, 300); };
+  function crestore(k) { cflush(); const t = chi + k; if (t < 0 || t >= chist.length) return; chi = t; cgEditor.setProject(JSON.parse(chist[chi]), false, true); cgChanged(); }
+  // a node changed: write the code again and run it
+  function cgChanged() {
+    try {
+      const text = cg.generate(cgEditor.project);
+      $('#code').value = text; cgText = text; sayCode(countMsg()); autosave();
+      clearTimeout(runTimer); runTimer = setTimeout(() => { if (mode === 'code') runSketch(); }, 120);
+    } catch (e) { sayCode(e.message, true); if (e.nodeId) cgEditor.setSel([e.nodeId]); }
+  }
+  // the text changed: make the nodes from it (keeping a saved layout when it still matches)
+  function loadCodeGraph(text) {
+    try {
+      let project = null;
+      if (pendingCodeGraph) { try { if (cg.generate(pendingCodeGraph) === text) project = pendingCodeGraph; } catch (e) { /* use the code */ } pendingCodeGraph = null; }
+      cgEditor.setProject(project || cg.compile(text)); cgText = text; resetCgHistory();
+      return true;
+    } catch (e) { sayCode((e.line ? `Line ${e.line}: ` : '') + e.message, true); toast('Fix the code first: ' + (e.line ? `line ${e.line}: ` : '') + e.message, 4000); return false; }
+  }
+  function setCodeView(v) {
+    let failed = false;
+    if (v === 'nodes' && cgText !== $('#code').value && !loadCodeGraph($('#code').value)) { v = 'text'; failed = true; }
+    codeView = v; document.body.dataset.cview = v;
+    $('#cvText').classList.toggle('on', v === 'text'); $('#cvNodes').classList.toggle('on', v === 'nodes');
+    $('#code').hidden = v === 'nodes'; $('#codeNodes').hidden = v === 'text';
+    if (v === 'nodes') { cgEditor.refresh(); sayCode(countMsg()); } else if (!failed) sayCode('');
+  }
+  $('#cvText').onclick = () => setCodeView('text'); $('#cvNodes').onclick = () => setCodeView('nodes');
+  $('#toCode').onclick = () => { setMode('code'); setCodeView('nodes'); };
+  const cCrumbs = $('#cCrumbs');
+  cgEditor.onNav = (stack) => {
+    cCrumbs.hidden = !stack.length; cCrumbs.innerHTML = '';
+    if (!stack.length) return;
+    const mk = (label, depth) => { const b = document.createElement('button'); b.textContent = label; b.onclick = () => { while (cgEditor.stack.length > depth) cgEditor.up(); }; return b; };
+    const sep = () => { const i = document.createElement('i'); i.textContent = '›'; return i; };
+    cCrumbs.appendChild(mk('Program', 0));
+    stack.forEach((id, k) => {
+      cCrumbs.appendChild(sep());
+      if (k === stack.length - 1) { const b = document.createElement('b'); b.textContent = cgEditor.titleOf(id); cCrumbs.appendChild(b); } else cCrumbs.appendChild(mk(cgEditor.titleOf(id), k + 1));
+    });
+  };
+  // a picture for loadImage(): chosen here, or dropped on the preview
+  const useImage = (file) => {
+    if (!file || !/^image\//.test(file.type)) return toast('That file is not a picture.');
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, 2000 / Math.max(im.width, im.height)), cvs = document.createElement('canvas');
+      cvs.width = Math.max(1, Math.round(im.width * k)); cvs.height = Math.max(1, Math.round(im.height * k));
+      cvs.getContext('2d').drawImage(im, 0, 0, cvs.width, cvs.height); URL.revokeObjectURL(url);
+      codeImage = cvs; $('#clearImg').hidden = false;
+      toast(`loadImage() now gives “${file.name}”. It is not saved with the sketch.`, 3600);
+      if (mode === 'code') { playing = true; runSketch(); }
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); toast('Could not open that picture.'); };
+    im.src = url;
+  };
+  $('#loadImg').onclick = () => $('#imgFile').click();
+  $('#imgFile').onchange = (e) => { useImage(e.target.files[0]); e.target.value = ''; };
+  $('#clearImg').onclick = () => { codeImage = null; $('#clearImg').hidden = true; if (mode === 'code') runSketch(); };
+  $('#preview').addEventListener('dragover', (e) => { if (mode === 'code') e.preventDefault(); });
+  $('#preview').addEventListener('drop', (e) => { if (mode !== 'code') return; const f = [...e.dataTransfer.files].find((x) => /^image\//.test(x.type)); if (f) { e.preventDefault(); useImage(f); } });
 
   // ---- rendering
   function renderNodes() {
@@ -99,7 +177,7 @@
     try {
       c.setTransform(dpr, 0, 0, dpr, 0, 0);
       c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
-      sketch = window.Daub.createSketch(c, W, H, dpr, $('#code').value);
+      sketch = window.Daub.createSketch(c, W, H, dpr, $('#code').value, { image: codeImage });
       sketch.setup(); sketch.draw();
       status('Running');
     } catch (e) { sketch = null; status(e.message, true); }
@@ -182,7 +260,7 @@
     document.querySelector('main').classList.toggle('wide', m === 'design');
     if (m === 'nodes') editor.refresh(); // the graph may have changed while this tab was hidden (measure after the layout settles)
     if (m === 'design') playing = false; // opens paused so editing is steady; the ▶ button plays
-    if (m === 'code') runSketch(); else if (m === 'design') { window.Daub.design.show(); window.Daub.design.syncPlay(); } else renderNodes();
+    if (m === 'code') { if (codeView === 'nodes') setCodeView('nodes'); runSketch(); } else if (m === 'design') { window.Daub.design.show(); window.Daub.design.syncPlay(); } else renderNodes();
   }
   document.querySelectorAll('.tabs button').forEach((b) => { b.onclick = () => setMode(b.dataset.tab); });
   const exList = $('#exList');
@@ -197,7 +275,7 @@
   let lastCat = null;
   examples.code.forEach((ex) => {
     if (ex.cat !== lastCat) { heading('Code · ' + (ex.cat || 'Sketches')); lastCat = ex.cat; }
-    item(ex.name, () => { $('#code').value = ex.code; autosave(); playing = true; setMode('code'); });
+    item(ex.name, () => { $('#code').value = ex.code; cgText = null; pendingCodeGraph = null; autosave(); playing = true; setMode('code'); });
   });
 
   // close menus when clicking elsewhere or choosing something
@@ -206,7 +284,7 @@
   // ---- controls
   const run = () => { playing = true; if (mode === 'code') runSketch(); window.Daub.design.syncPlay(); };
   $('#run').onclick = run; $('#stop').onclick = () => { playing = false; window.Daub.design.syncPlay(); };
-  $('#fit').onclick = () => (mode === 'design' ? window.Daub.design.fit() : editor.fit());
+  $('#fit').onclick = () => (mode === 'design' ? window.Daub.design.fit() : (activeEd() || editor).fit());
   $('#undo').onclick = () => restore(-1); $('#redo').onclick = () => restore(1);
   $('#code').addEventListener('input', autosave);
   $('#code').addEventListener('keydown', (e) => {
@@ -227,14 +305,14 @@
     if (mode === 'design' && window.Daub.design.key(e)) return;
     if (mode === 'code' && document.activeElement === cv && !(e.ctrlKey || e.metaKey)) return; // the sketch owns the keyboard while its canvas has focus
     const t = e.target, typing = t.matches && t.matches('input:not([type=color]):not([type=checkbox]),textarea,select,[contenteditable="true"]');
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !(t.matches && t.matches('textarea'))) { e.preventDefault(); restore(e.shiftKey ? 1 : -1); }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !(t.matches && t.matches('textarea,input[type=text]'))) { e.preventDefault(); restore(e.shiftKey ? 1 : -1); }
     else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); restore(1); }
     else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'g' && mode === 'nodes') { e.preventDefault(); editor.groupSelected(); }
     else if (typing) return;
-    else if (e.key === 'Escape' && mode === 'nodes' && editor.stack.length) editor.up();
-    else if (e.key === 'Enter' && mode === 'nodes') { const n = editor.selectedNodes()[0]; if (n && n.type.startsWith('sub:')) editor.enter(n.type.slice(4)); }
-    else if ((e.key === 'Delete' || e.key === 'Backspace') && mode === 'nodes') { e.preventDefault(); editor.deleteSelected(); }
-    else if (e.key.toLowerCase() === 'f' && mode === 'nodes') editor.fit();
+    else if (e.key === 'Escape' && activeEd() && activeEd().stack.length) activeEd().up();
+    else if (e.key === 'Enter' && activeEd()) { const ae = activeEd(), n = ae.selectedNodes()[0]; if (n) { if (ae === cgEditor) { if (ae.def(n.type).container) ae.enter(n.id); } else if (n.type.startsWith('sub:')) ae.enter(n.type.slice(4)); } }
+    else if ((e.key === 'Delete' || e.key === 'Backspace') && activeEd()) { e.preventDefault(); activeEd().deleteSelected(); }
+    else if (e.key.toLowerCase() === 'f' && activeEd()) activeEd().fit();
     else if (e.key.toLowerCase() === 'f' && mode === 'design') window.Daub.design.fit();
     else if (e.key === ' ') { e.preventDefault(); if (playing) { playing = false; window.Daub.design.syncPlay(); } else run(); }
   });
@@ -303,13 +381,13 @@
     if (mode === 'code' || !lastScene) return toast('SVG export works from the Design and Nodes tabs.');
     download('daub.svg', new Blob([window.Daub.toSVG(lastScene, W, H)], { type: 'image/svg+xml' }));
   };
-  $('#save').onclick = () => download('sketch.daub.json', new Blob([JSON.stringify({ version: 2, graph: editor.project, code: $('#code').value }, null, 2)], { type: 'application/json' }));
+  $('#save').onclick = () => download('sketch.daub.json', new Blob([JSON.stringify({ version: 3, graph: editor.project, code: $('#code').value, codeGraph: savedCodeGraph() }, null, 2)], { type: 'application/json' }));
   $('#open').onclick = () => $('#file').click();
   $('#file').onchange = async (e) => {
     try {
       const d = JSON.parse(await e.target.files[0].text());
       if (!d.graph || !validProject(d.graph)) throw new Error('That file is not a Daub sketch.');
-      loadProject(d.graph); $('#code').value = d.code || DEFAULT_CODE; autosave(); setMode(d.graph.design && d.graph.design.shapes.length && d.graph.nodes.length <= 1 ? 'design' : 'nodes');
+      loadProject(d.graph); $('#code').value = d.code || DEFAULT_CODE; cgText = null; pendingCodeGraph = d.codeGraph || null; autosave(); setMode(d.graph.design && d.graph.design.shapes.length && d.graph.nodes.length <= 1 ? 'design' : 'nodes');
     } catch (err) { status(err.message, true); }
     e.target.value = '';
   };
@@ -348,7 +426,7 @@
       const typing = document.activeElement && document.activeElement.matches('textarea,input:not([type=color]):not([type=checkbox])');
       if (action === 'undo' || action === 'redo') {
         if (typing) document.execCommand(action); // inside a text box, undo the typing
-        else if (mode === 'nodes' || mode === 'design') $('#' + action).click(); // otherwise undo the sketch
+        else if (activeEd() || mode === 'design') $('#' + action).click(); // otherwise undo the sketch
         return;
       }
       const buttons = { open: '#open', save: '#save', importSvg: '#importSvg', png: '#png', svg: '#svg', video: '#video' };
@@ -356,7 +434,7 @@
     });
   }
 
-  window.Daub.app = { editor, runSketch, renderNodes, setMode, toast };
+  window.Daub.app = { editor, cgEditor, runSketch, renderNodes, setMode, setCodeView, toast };
   renderNodes();
   requestAnimationFrame(frame);
 })();
